@@ -10,6 +10,9 @@ pub enum Declaration {
     ConstructorDeclaration {
         body: Vec<Statement>,
     },
+    TickDeclaration {
+        body: Vec<Statement>,
+    },
     InstanceVarDeclaration {
         name: String,
     },
@@ -53,6 +56,8 @@ pub enum Expression {
         // TODO: constructor parameters probably necessary later
         name: String,
     },
+
+    Echo(Box<Expression>),
 }
 
 #[derive(Debug, Clone)]

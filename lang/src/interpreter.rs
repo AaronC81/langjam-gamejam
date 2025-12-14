@@ -33,6 +33,25 @@ impl Interpreter {
         Ok(())
     }
 
+    pub fn execute_tick(&mut self) -> InterpreterResult {
+        let ids_and_kinds = self.entities.iter()
+            .map(|(id, entity)| (*id, entity.kind.clone()))
+            .collect::<Vec<_>>();
+
+        for (id, kind) in ids_and_kinds {
+            if let Some(tick) = kind.tick_handler.as_ref() {
+                let mut frame = Frame {
+                    entity: Some(id),
+                    locals: HashMap::new(),
+                };
+
+                self.execute_statement_body(tick, &mut frame)?;
+            }
+        }
+
+        Ok(())
+    }
+
     fn execute_statement_body(&mut self, body: &[Statement], frame: &mut Frame) -> InterpreterResult<Object> {
         for stmt in body {
             match self.interpret_statement(stmt, frame)? {
@@ -70,6 +89,7 @@ impl Interpreter {
                     name: name.to_owned(),
                     functions: HashMap::new(),
                     constructor: None,
+                    tick_handler: None,
                     ivars: vec![],
                 };
 
@@ -90,6 +110,18 @@ impl Interpreter {
                 }
 
                 target.constructor = Some(body.clone());
+                Ok(())
+            }
+            
+            Declaration::TickDeclaration { body } => {
+                let Some(target) = target else {
+                    return Err(RuntimeError::new("tick declarations cannot appear outside of an entity"));
+                };
+                if target.tick_handler.is_some() {
+                    return Err(RuntimeError::new(format!("tick handler is already declared")));
+                }
+
+                target.tick_handler = Some(body.clone());
                 Ok(())
             }
 
@@ -283,6 +315,30 @@ impl Interpreter {
 
                 Ok(Value::ReadOnly(Object::Entity(entity_id)))
             }
+
+            Expression::Echo(target) => {
+                let target = self.interpret_expression(target, frame)?.read()?;
+                println!("{}", self.describe_object(&target));
+                Ok(Value::ReadOnly(target))
+            }
+        }
+    }
+
+    fn describe_object(&self, obj: &Object) -> String {
+        match obj {
+            Object::Null => "null".to_owned(),
+            Object::Number(n) => n.to_string(),
+            Object::Entity(entity_id) => {
+                if let Some(entity) = self.entities.get(&entity_id) {
+                    let ivars = entity.ivars.iter()
+                        .map(|(k, v)| format!("{}={}", k, self.describe_object(v)))
+                        .collect::<Vec<_>>()
+                        .join(", ");
+                    format!("Entity {} ({})", entity.kind.name, ivars)
+                } else {
+                    "destroyed entity".to_owned()
+                }
+            }
         }
     }
 }
@@ -351,6 +407,7 @@ pub struct EntityKind {
     name: String,
     functions: HashMap<String, FunctionDeclaration>,
     constructor: Option<Vec<Statement>>,
+    tick_handler: Option<Vec<Statement>>,
     ivars: Vec<String>,
 }
 
