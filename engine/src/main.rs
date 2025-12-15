@@ -1,4 +1,4 @@
-use langjam_gamejam_lang::{BinaryOperator, Declaration, Expression, Interpreter, Pixel, Statement, parse};
+use langjam_gamejam_lang::{BinaryOperator, Declaration, Expression, InputReport, Interpreter, Pixel, Statement, parse};
 use raylib::prelude::*;
 
 const PIXEL_SIZE: i32 = 10;
@@ -42,16 +42,31 @@ fn main() {
             }
         }
 
+        entity InputMonitor {
+            tick {
+                echo Input.up_pressed();
+            }
+        }
+
         constructor {
             spawn FpsTest;
             spawn Smile;
+            spawn InputMonitor;
         }
     ").unwrap();
     let mut interpreter = Interpreter::with_declarations(&declarations).unwrap();
 
-
     interpreter.execute_init().unwrap();
     while !rl.window_should_close() {
+        interpreter.update_input_report(InputReport {
+            up: rl.is_key_down(KeyboardKey::KEY_UP),
+            down: rl.is_key_down(KeyboardKey::KEY_DOWN),
+            left: rl.is_key_down(KeyboardKey::KEY_LEFT),
+            right: rl.is_key_down(KeyboardKey::KEY_RIGHT),
+
+            x: rl.is_key_down(KeyboardKey::KEY_X),
+            z: rl.is_key_down(KeyboardKey::KEY_Z),
+        });
         interpreter.execute_tick().unwrap();
 
         let mut d = rl.begin_drawing(&thread);

@@ -9,6 +9,8 @@ pub struct Interpreter {
     next_entity_id: usize,
 
     entity_kinds: HashMap<String, Rc<EntityKind>>,
+
+    input_report: InputReport,
 }
 
 pub type InterpreterResult<T = ()> = Result<T, RuntimeError>;
@@ -20,6 +22,7 @@ impl Interpreter {
             entities: HashMap::new(),
             next_entity_id: 1,
             entity_kinds: HashMap::new(),
+            input_report: Default::default(),
         }
     }
 
@@ -39,6 +42,10 @@ impl Interpreter {
 
         self.execute_statement_body(&self.top_level_constructor.clone(), &mut frame)?;
         Ok(())
+    }
+
+    pub fn update_input_report(&mut self, report: InputReport) {
+        self.input_report = report;
     }
 
     pub fn execute_tick(&mut self) -> InterpreterResult {
@@ -247,6 +254,11 @@ impl Interpreter {
             Expression::BooleanLiteral(b) => Ok(Value::ReadOnly(Object::Boolean(*b))),
 
             Expression::Identifier(id) => {
+                // Special identifiers!
+                if id == "Input" {
+                    return Ok(Value::ReadOnly(Object::InputSingleton))
+                }
+
                 if let Some(obj) = frame.locals.get(id) {
                     Ok(Value::ReadWrite {
                         value: obj.clone(),
@@ -288,29 +300,49 @@ impl Interpreter {
 
             Expression::FunctionCall { target, name, arguments } => {
                 let target = self.interpret_expression(&target, frame)?.read()?;
-                let Object::Entity(entity_id) = target else {
-                    return Err(RuntimeError::new(format!("function calls can only target entities")));
-                };
+                match target {
+                    Object::Entity(entity_id) => {
+                        let entity_kind = self.entities[&entity_id].kind.clone();
+                        let Some(FunctionDeclaration { parameters, body, .. }) = entity_kind.functions.get(name) else {
+                            return Err(RuntimeError::new(format!("entity declaration `{}` has no function named `{}`", entity_kind.name, name)));
+                        };
 
-                let entity_kind = self.entities[&entity_id].kind.clone();
-                let Some(FunctionDeclaration { parameters, body, .. }) = entity_kind.functions.get(name) else {
-                    return Err(RuntimeError::new(format!("entity declaration `{}` has no function named `{}`", entity_kind.name, name)));
-                };
+                        if parameters.len() != arguments.len() {
+                            return Err(RuntimeError::new(format!("function declaration for `{}` has {} parameters, but {} arguments were provided", name, parameters.len(), arguments.len())));
+                        }
 
-                if parameters.len() != arguments.len() {
-                    return Err(RuntimeError::new(format!("function declaration for `{}` has {} parameters, but {} arguments were provided", name, parameters.len(), arguments.len())));
+                        let arguments = arguments.iter()
+                            .map(|arg| self.interpret_expression(arg, frame).map(|v| v.read()).flatten())
+                            .collect::<Result<Vec<_>, _>>()?;
+
+                        let mut frame = Frame {
+                            entity: Some(entity_id),
+                            locals: parameters.iter().cloned().zip(arguments).collect(),
+                        };
+
+                        Ok(Value::ReadOnly(self.execute_statement_body(&body, &mut frame)?))
+                    },
+
+                    Object::InputSingleton => {
+                        // All `Input` functions take no parameters
+                        if arguments.len() != 0 {
+                            return Err(RuntimeError::new(format!("function declaration for `{}` has 0 parameters, but {} arguments were provided", name, arguments.len())));
+                        }
+
+                        match name.as_str() {
+                            "up_pressed" => Ok(Value::ReadOnly(Object::Boolean(self.input_report.up))),
+                            "down_pressed" => Ok(Value::ReadOnly(Object::Boolean(self.input_report.down))),
+                            "left_pressed" => Ok(Value::ReadOnly(Object::Boolean(self.input_report.left))),
+                            "right_pressed" => Ok(Value::ReadOnly(Object::Boolean(self.input_report.right))),
+                            "x_pressed" => Ok(Value::ReadOnly(Object::Boolean(self.input_report.x))),
+                            "z_pressed" => Ok(Value::ReadOnly(Object::Boolean(self.input_report.z))),
+
+                            _ => Err(RuntimeError::new(format!("`Input` has no function named `{}`", name))),
+                        }
+                    }
+
+                    _ => Err(RuntimeError::new(format!("cannot call function `{name}` on an object that doesn't have functions"))),
                 }
-
-                let arguments = arguments.iter()
-                    .map(|arg| self.interpret_expression(arg, frame).map(|v| v.read()).flatten())
-                    .collect::<Result<Vec<_>, _>>()?;
-
-                let mut frame = Frame {
-                    entity: Some(entity_id),
-                    locals: parameters.iter().cloned().zip(arguments).collect(),
-                };
-
-                Ok(Value::ReadOnly(self.execute_statement_body(&body, &mut frame)?))
             }
 
             Expression::BinaryOperation { left, right, operator } => {
@@ -388,6 +420,8 @@ impl Interpreter {
             },
             Object::Sprite(sprite) =>
                 format!("sprite ({}x{})", sprite.width, sprite.height),
+            
+            Object::InputSingleton => "Input".to_owned(),
         }
     }
 }
@@ -441,6 +475,8 @@ pub enum Object {
     Boolean(bool),
     Entity(EntityId),
     Sprite(Sprite),
+
+    InputSingleton,
 }
 
 /// Uniquely refers to an entity. Allows entities to be passed around like objects.
@@ -490,6 +526,20 @@ pub struct DrawOperation {
     pub sprite: Sprite,
     pub x: f64,
     pub y: f64,
+}
+
+/// State of external game inputs.
+/// 
+/// As a "fantasy console", only a subset of keys are supported.
+#[derive(Debug, Clone, Default)]
+pub struct InputReport {
+    pub up: bool,
+    pub down: bool,
+    pub left: bool,
+    pub right: bool,
+
+    pub x: bool,
+    pub z: bool,
 }
 
 pub struct Frame {
