@@ -85,8 +85,6 @@ fn atom_expression(input: &str) -> IResult<&str, Expression> {
         map(tag("true"), |_| Expression::BooleanLiteral(true)),
         map(tag("false"), |_| Expression::BooleanLiteral(false)),
 
-        echo_expression,
-        spawn_expression,
         sprite_expression,
 
         map(identifier, |id| Expression::Identifier(id)),
@@ -95,14 +93,54 @@ fn atom_expression(input: &str) -> IResult<&str, Expression> {
     )).parse(input)
 }
 
-fn mul_div_expression(input: &str) -> IResult<&str, Expression> {
+fn call_expression(input: &str) -> IResult<&str, Expression> {
     let (input, mut expr) = atom_expression(input)?;
+
+    let (input, calls) = many0(
+        map(
+            (
+                ws0,
+                char('.'),
+                ws0,
+                identifier,
+                ws0,
+                char('('),
+                separated_list0(
+                    char(','),
+                    map((ws0, expression, ws0), |(_, e, _)| e),
+                ),
+                char(')'),
+            ),
+            |(_, _, _, name, _, _, arguments, _)| (name, arguments),
+        )
+    ).parse(input)?;
+    for (name, arguments) in calls {
+        expr = Expression::FunctionCall {
+            target: Box::new(expr),
+            name,
+            arguments,
+        }
+    }
+
+    Ok((input, expr))
+}
+
+fn prefix_expression(input: &str) -> IResult<&str, Expression> {
+    alt((
+        echo_expression,
+        spawn_expression,
+        call_expression,
+    )).parse(input)
+}
+
+fn mul_div_expression(input: &str) -> IResult<&str, Expression> {
+    let (input, mut expr) = prefix_expression(input)?;
 
     let (input, ops) = many0((
         ws0,
         alt((char('*'), char('/'))),
         ws0,
-        atom_expression,
+        prefix_expression,
     )).parse(input)?;
     for (_, op, _, right) in ops {
         let operator = match op {
