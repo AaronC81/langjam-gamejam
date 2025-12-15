@@ -1,6 +1,6 @@
 use std::{collections::HashMap, error::Error, fmt::Display, ops::ControlFlow, rc::Rc};
 
-use crate::{BinaryOperator, Declaration, Expression, Statement};
+use crate::{BinaryOperator, Declaration, Expression, Sprite, Statement};
 
 pub struct Interpreter {
     top_level_constructor: Vec<Statement>,
@@ -242,9 +242,10 @@ impl Interpreter {
                         }),
                         error_on_read: RuntimeError::new(format!("undefined instance variable `{id}`"))
                     })
-                }
-                
+                }    
             }
+
+            Expression::SpriteLiteral(sprite) => Ok(Value::ReadOnly(Object::Sprite(sprite.clone()))),
 
             Expression::FunctionCall { target, name, arguments } => {
                 let target = self.interpret_expression(&target, frame)?.read()?;
@@ -344,7 +345,9 @@ impl Interpreter {
                 } else {
                     "destroyed entity".to_owned()
                 }
-            }
+            },
+            Object::Sprite(sprite) =>
+                format!("sprite ({}x{})", sprite.width, sprite.height),
         }
     }
 }
@@ -396,6 +399,7 @@ pub enum Object {
     Null,
     Number(f64),
     Entity(EntityId),
+    Sprite(Sprite),
 }
 
 /// Uniquely refers to an entity. Allows entities to be passed around like objects.

@@ -1,9 +1,67 @@
-use nom::{IResult, Parser, branch::alt, bytes::complete::tag, character::complete::char, combinator::map, multi::many0, number::complete::double};
+use nom::{IResult, Parser, branch::alt, bytes::complete::{tag, take_while1}, character::complete::char, combinator::map, error::make_error, multi::{many0, many1, separated_list0}, number::complete::double};
 
-use crate::{BinaryOperator, Expression, parser::{identifier, instance_var_identifier, ws0, ws1}};
+use crate::{BinaryOperator, Expression, Pixel, Sprite, parser::{identifier, instance_var_identifier, ws0, ws1}};
 
 fn number(input: &str) -> IResult<&str, f64> {
     double(input)
+}
+
+fn sprite_expression(input: &str) -> IResult<&str, Expression> {
+    fn sprite_pixel(input: &str) -> IResult<&str, Pixel> {
+        alt((
+            map(char('#'), |_| Pixel::Set),
+            map(char('.'), |_| Pixel::Clear),
+        )).parse(input)
+    }
+    
+    fn sprite_pixel_row(input: &str) -> IResult<&str, Vec<Pixel>> {
+        many1(sprite_pixel).parse(input)
+    }
+
+    fn sprite(input: &str) -> IResult<&str, Sprite> {
+        let (input, rows) = separated_list0(ws1, sprite_pixel_row).parse(input)?;
+
+        match rows.as_slice() {
+            [] => Ok((input, Sprite {
+                width: 0,
+                height: 0,
+                pixels: vec![]
+            })),
+
+            [only] => Ok((input, Sprite {
+                width: only.len(),
+                height: 1,
+                pixels: only.clone()
+            })),
+
+            [first, rest@..] => {
+                // Validate that all rows are the same size
+                for row in rest {
+                    if row.len() != first.len() {
+                        // TODO: better error
+                        panic!("sprite has inconsistent row lengths")
+                    }
+                }
+
+                // Concatenate all pixels
+                let mut all_pixels = first.clone();
+                for row in rest {
+                    all_pixels.extend_from_slice(row);
+                }
+
+                Ok((input, Sprite {
+                    width: first.len(),
+                    height: rest.len() + 1,
+                    pixels: all_pixels,
+                }))
+            },
+        }
+    }
+
+    map(
+        (tag("sprite"), ws0, tag("{"), ws0, sprite, ws0, tag("}")),
+        |(_, _, _, _, sprite, _, _)| Expression::SpriteLiteral(sprite)
+    ).parse(input)
 }
 
 fn echo_expression(input: &str) -> IResult<&str, Expression> {
@@ -27,6 +85,7 @@ fn atom_expression(input: &str) -> IResult<&str, Expression> {
 
         echo_expression,
         spawn_expression,
+        sprite_expression,
 
         map(identifier, |id| Expression::Identifier(id)),
         map(instance_var_identifier, |id| Expression::InstanceVarIdentifier(id)),

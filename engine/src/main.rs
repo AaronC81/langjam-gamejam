@@ -19,6 +19,14 @@ fn main() {
             tick {
                 @ticks = @ticks + 1;
                 echo @ticks;
+
+                echo sprite {
+                    .###.
+                    #...#
+                    #...#
+                    #...#
+                    .###.
+                };
             }
         }
 

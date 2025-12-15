@@ -38,6 +38,8 @@ pub enum Expression {
     Identifier(String),
     InstanceVarIdentifier(String), // @var
 
+    SpriteLiteral(Sprite),
+
     FunctionCall {
         target: Box<Expression>,
         name: String,
@@ -63,4 +65,24 @@ pub enum BinaryOperator {
     Subtract,
     Multiply,
     Divide,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Sprite {
+    pub width: usize,
+    pub height: usize,
+    
+    // Laid out like:
+    //
+    //   0 1 2
+    //   3 4 5
+    //   6 7 8
+    //
+    pub pixels: Vec<Pixel>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Pixel {
+    Clear,
+    Set,
 }
