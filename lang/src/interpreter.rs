@@ -244,6 +244,7 @@ impl Interpreter {
 
             Expression::NullLiteral => Ok(Value::ReadOnly(Object::Null)),
             Expression::NumberLiteral(n) => Ok(Value::ReadOnly(Object::Number(*n))),
+            Expression::BooleanLiteral(b) => Ok(Value::ReadOnly(Object::Boolean(*b))),
 
             Expression::Identifier(id) => {
                 if let Some(obj) = frame.locals.get(id) {
@@ -373,6 +374,7 @@ impl Interpreter {
         match obj {
             Object::Null => "null".to_owned(),
             Object::Number(n) => n.to_string(),
+            Object::Boolean(b) => b.to_string(),
             Object::Entity(entity_id) => {
                 if let Some(entity) = self.entities.get(&entity_id) {
                     let ivars = entity.ivars.iter()
@@ -436,6 +438,7 @@ impl<'w> Value<'w> {
 pub enum Object {
     Null,
     Number(f64),
+    Boolean(bool),
     Entity(EntityId),
     Sprite(Sprite),
 }

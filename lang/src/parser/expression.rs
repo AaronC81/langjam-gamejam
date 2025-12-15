@@ -82,6 +82,8 @@ fn atom_expression(input: &str) -> IResult<&str, Expression> {
     alt((
         map(tag("null"), |_| Expression::NullLiteral),
         map(tag("this"), |_| Expression::ThisLiteral),
+        map(tag("true"), |_| Expression::BooleanLiteral(true)),
+        map(tag("false"), |_| Expression::BooleanLiteral(false)),
 
         echo_expression,
         spawn_expression,

@@ -38,6 +38,7 @@ pub enum Expression {
     ThisLiteral,
     NullLiteral,
     NumberLiteral(f64),
+    BooleanLiteral(bool),
     Identifier(String),
     InstanceVarIdentifier(String), // @var
 
