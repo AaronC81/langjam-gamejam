@@ -22,7 +22,7 @@ fn main() {
             }
         }
 
-        gameinit {
+        constructor {
             spawn FpsTest;
         }
     ").unwrap();

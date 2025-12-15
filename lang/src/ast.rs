@@ -1,8 +1,5 @@
 #[derive(Debug, Clone)]
 pub enum Declaration {
-    GameInitDeclaration {
-        body: Vec<Statement>,
-    },
     EntityDeclaration {
         name: String,
         body: Vec<Declaration>,

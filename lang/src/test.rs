@@ -31,7 +31,7 @@ fn test_basic_interpreter() {
         ],
     }, None).unwrap();
 
-    interpreter.interpret_declaration(&Declaration::GameInitDeclaration { body: vec![
+    interpreter.interpret_declaration(&Declaration::ConstructorDeclaration { body: vec![
         Statement::Assignment {
             target: Expression::Identifier("plyr".to_owned()),
             value: Expression::AddEntity { name: "Player".to_owned() },

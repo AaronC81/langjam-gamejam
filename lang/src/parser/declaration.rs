@@ -27,7 +27,6 @@ fn declaration_body(input: &str) -> IResult<&str, Vec<Declaration>> {
 
 pub fn declaration(input: &str) -> IResult<&str, Declaration> {
     alt((
-        map((tag("gameinit"), ws0, statement_body), |(_, _, body)| Declaration::GameInitDeclaration { body }),
         map((tag("entity"), ws1, identifier, ws0, declaration_body), |(_, _, name, _, body)| Declaration::EntityDeclaration { name, body }),
         map((tag("constructor"), ws0, statement_body), |(_, _, body)| Declaration::ConstructorDeclaration { body }),
         map((tag("tick"), ws0, statement_body), |(_, _, body)| Declaration::TickDeclaration { body }),

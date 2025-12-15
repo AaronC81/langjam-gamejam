@@ -3,7 +3,7 @@ use std::{collections::HashMap, error::Error, fmt::Display, ops::ControlFlow, rc
 use crate::{BinaryOperator, Declaration, Expression, Statement};
 
 pub struct Interpreter {
-    game_init: Vec<Statement>,
+    top_level_constructor: Vec<Statement>,
 
     entities: HashMap<EntityId, Entity>,
     next_entity_id: usize,
@@ -16,7 +16,7 @@ pub type InterpreterResult<T = ()> = Result<T, RuntimeError>;
 impl Interpreter {
     pub fn new() -> Self {
         Self {
-            game_init: vec![],
+            top_level_constructor: vec![],
             entities: HashMap::new(),
             next_entity_id: 1,
             entity_kinds: HashMap::new(),
@@ -37,7 +37,7 @@ impl Interpreter {
             locals: HashMap::new(),
         };
 
-        self.execute_statement_body(&self.game_init.clone(), &mut frame)?;
+        self.execute_statement_body(&self.top_level_constructor.clone(), &mut frame)?;
         Ok(())
     }
 
@@ -77,14 +77,6 @@ impl Interpreter {
 
     pub fn interpret_declaration(&mut self, decl: &Declaration, target: Option<&mut EntityKind>) -> InterpreterResult {
         match decl {
-            Declaration::GameInitDeclaration { body } => {
-                if !self.game_init.is_empty() {
-                    return Err(RuntimeError::new("game initialiser already defined"));
-                }
-                self.game_init = body.clone();
-                Ok(())
-            }
-
             Declaration::EntityDeclaration { name, body } => {
                 if target.is_some() {
                     return Err(RuntimeError::new("cannot nest entity definitions"));
@@ -110,15 +102,21 @@ impl Interpreter {
             }
 
             Declaration::ConstructorDeclaration { body } => {
-                let Some(target) = target else {
-                    return Err(RuntimeError::new("constructor declarations cannot appear outside of an entity"));
-                };
-                if target.constructor.is_some() {
-                    return Err(RuntimeError::new(format!("constructor is already declared")));
+                // Constructors may either apply to the current entity, or the entire program
+                if let Some(target) = target {
+                    if target.constructor.is_some() {
+                        return Err(RuntimeError::new(format!("constructor is already declared")));
+                    }
+    
+                    target.constructor = Some(body.clone());
+                    Ok(())
+                } else {
+                    if !self.top_level_constructor.is_empty() {
+                        return Err(RuntimeError::new("top-level constructor is already declared"));
+                    }
+                    self.top_level_constructor = body.clone();
+                    Ok(())
                 }
-
-                target.constructor = Some(body.clone());
-                Ok(())
             }
             
             Declaration::TickDeclaration { body } => {
