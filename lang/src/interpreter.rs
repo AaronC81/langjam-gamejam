@@ -23,6 +23,14 @@ impl Interpreter {
         }
     }
 
+    pub fn with_declarations(declarations: &[Declaration]) -> InterpreterResult<Interpreter> {
+        let mut interpreter = Self::new();
+        for decl in declarations {
+            interpreter.interpret_declaration(decl, None)?;
+        }
+        Ok(interpreter)
+    }
+
     pub fn execute_init(&mut self) -> InterpreterResult {
         let mut frame = Frame {
             entity: None,

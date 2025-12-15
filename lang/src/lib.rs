@@ -4,6 +4,9 @@ pub use ast::*;
 mod interpreter;
 pub use interpreter::*;
 
+mod parser;
+pub use parser::*;
+
 #[cfg(test)]
 mod test;
 

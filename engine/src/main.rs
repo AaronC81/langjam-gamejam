@@ -1,4 +1,4 @@
-use langjam_gamejam_lang::{BinaryOperator, Declaration, Expression, Interpreter, Statement};
+use langjam_gamejam_lang::{BinaryOperator, Declaration, Expression, Interpreter, Statement, parse};
 use raylib::prelude::*;
 
 fn main() {
@@ -8,43 +8,25 @@ fn main() {
         .build();
     rl.set_target_fps(60);
 
-    let mut interpreter = Interpreter::new();
+    let declarations = parse("
+        entity FpsTest {
+            declare @ticks;
 
-    interpreter.interpret_declaration(&Declaration::EntityDeclaration {
-        name: "FpsTest".to_owned(),
-        body: vec![
-            Declaration::InstanceVarDeclaration { name: "ticks".to_owned() },
-            Declaration::ConstructorDeclaration { body: vec![
-                Statement::Assignment {
-                    target: Expression::InstanceVarIdentifier("ticks".to_owned()),
-                    value: Expression::NumberLiteral(0.0),
-                },
-            ] },
-            Declaration::TickDeclaration {
-                body: vec![
-                    Statement::Assignment {
-                        target: Expression::InstanceVarIdentifier("ticks".to_owned()),
-                        value: Expression::BinaryOperation {
-                            left: Box::new(Expression::InstanceVarIdentifier("ticks".to_owned())),
-                            right: Box::new(Expression::NumberLiteral(1.0)),
-                            operator: BinaryOperator::Add,
-                        },
-                    },
-                    Statement::Expression(
-                        Expression::Echo(
-                            Box::new(Expression::InstanceVarIdentifier("ticks".to_owned())),
-                        )
-                    ),
-                ],
-            },
-        ],
-    }, None).unwrap();
+            constructor {
+                @ticks = 0;
+            }
 
-    interpreter.interpret_declaration(&Declaration::GameInitDeclaration { body: vec![
-        Statement::Expression(
-            Expression::AddEntity { name: "FpsTest".to_owned() },
-        ),
-    ] }, None).unwrap();
+            tick {
+                @ticks = @ticks + 1;
+                echo @ticks;
+            }
+        }
+
+        gameinit {
+            spawn FpsTest;
+        }
+    ").unwrap();
+    let mut interpreter = Interpreter::with_declarations(&declarations).unwrap();
 
 
     interpreter.execute_init().unwrap();
