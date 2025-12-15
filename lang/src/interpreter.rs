@@ -276,14 +276,7 @@ impl Interpreter {
                         }),
                     })
                 } else {
-                    Ok(Value::WriteOnly {
-                        write: Box::new(move |o| {
-                            let entity = &mut self.entities.get_mut(&entity_id).unwrap();
-                            entity.ivars.insert(id.to_owned(), o);
-                            Ok(())
-                        }),
-                        error_on_read: RuntimeError::new(format!("undefined instance variable `{id}`"))
-                    })
+                    Err(RuntimeError::new(format!("undeclared instance variable `{id}`")))
                 }    
             }
 
