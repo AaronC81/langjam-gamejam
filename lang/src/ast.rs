@@ -10,6 +10,9 @@ pub enum Declaration {
     TickDeclaration {
         body: Vec<Statement>,
     },
+    DrawDeclaration {
+        body: Vec<Statement>,
+    },
     InstanceVarDeclaration {
         name: String,
     },

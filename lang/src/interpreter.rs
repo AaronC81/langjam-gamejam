@@ -60,6 +60,35 @@ impl Interpreter {
         Ok(())
     }
 
+    pub fn execute_draw(&mut self) -> InterpreterResult<Vec<DrawOperation>> {
+        let mut draw_ops = vec![];
+
+        let ids_and_kinds = self.entities.iter()
+            .map(|(id, entity)| (*id, entity.kind.clone()))
+            .collect::<Vec<_>>();
+
+        for (id, kind) in ids_and_kinds {
+            if let Some(draw) = kind.draw_handler.as_ref() {
+                let mut frame = Frame {
+                    entity: Some(id),
+                    locals: HashMap::new(),
+                };
+
+                match self.execute_statement_body(draw, &mut frame)? {
+                    Object::Null => {},
+                    Object::Sprite(sprite) => {
+                        let (x, y) = self.entities[&id].draw_position_ivars()?;
+                        draw_ops.push(DrawOperation { x, y, sprite })
+                    },
+
+                    _ => return Err(RuntimeError::new("if `draw` returns something, it must be a sprite")),
+                }
+            }
+        }
+
+        Ok(draw_ops)
+    }
+
     fn execute_statement_body(&mut self, body: &[Statement], frame: &mut Frame) -> InterpreterResult<Object> {
         for stmt in body {
             match self.interpret_statement(stmt, frame)? {
@@ -90,6 +119,7 @@ impl Interpreter {
                     functions: HashMap::new(),
                     constructor: None,
                     tick_handler: None,
+                    draw_handler: None,
                     ivars: vec![],
                 };
 
@@ -128,6 +158,18 @@ impl Interpreter {
                 }
 
                 target.tick_handler = Some(body.clone());
+                Ok(())
+            }
+
+            Declaration::DrawDeclaration { body } => {
+                let Some(target) = target else {
+                    return Err(RuntimeError::new("draw declarations cannot appear outside of an entity"));
+                };
+                if target.draw_handler.is_some() {
+                    return Err(RuntimeError::new(format!("draw handler is already declared")));
+                }
+
+                target.draw_handler = Some(body.clone());
                 Ok(())
             }
 
@@ -412,12 +454,30 @@ pub struct Entity {
     pub ivars: HashMap<String, Object>,
 }
 
+impl Entity {
+    pub fn draw_position_ivars(&self) -> InterpreterResult<(f64, f64)> {
+        let Some(x) = self.ivars.get("x") else {
+            return Err(RuntimeError::new("instance variable `x` must be declared when drawing a sprite"));
+        };
+        let Some(y) = self.ivars.get("y") else {
+            return Err(RuntimeError::new("instance variable `y` must be declared when drawing a sprite"));
+        };
+
+        let (Object::Number(x), Object::Number(y)) = (x, y) else {
+            return Err(RuntimeError::new("instance variables `x` and `y` must both be numbers"));
+        };
+
+        Ok((*x, *y))
+    }
+}
+
 /// An entity definition which can be instantiated.
 pub struct EntityKind {
     name: String,
     functions: HashMap<String, FunctionDeclaration>,
     constructor: Option<Vec<Statement>>,
     tick_handler: Option<Vec<Statement>>,
+    draw_handler: Option<Vec<Statement>>,
     ivars: Vec<String>,
 }
 
@@ -425,6 +485,12 @@ pub struct FunctionDeclaration {
     name: String,
     parameters: Vec<String>,
     body: Vec<Statement>,
+}
+
+pub struct DrawOperation {
+    pub sprite: Sprite,
+    pub x: f64,
+    pub y: f64,
 }
 
 pub struct Frame {

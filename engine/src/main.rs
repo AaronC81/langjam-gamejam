@@ -1,5 +1,7 @@
-use langjam_gamejam_lang::{BinaryOperator, Declaration, Expression, Interpreter, Statement, parse};
+use langjam_gamejam_lang::{BinaryOperator, Declaration, Expression, Interpreter, Pixel, Statement, parse};
 use raylib::prelude::*;
+
+const PIXEL_SIZE: i32 = 10;
 
 fn main() {
     let (mut rl, thread) = raylib::init()
@@ -19,11 +21,22 @@ fn main() {
             tick {
                 @ticks = @ticks + 1;
                 echo @ticks;
+            }
+        }
+        
+        entity Smile {
+            declare @x;
+            declare @y;
 
-                echo sprite {
-                    .###.
-                    #...#
-                    #...#
+            constructor {
+                @x = 2;
+                @y = 2;
+            }
+
+            draw {
+                return sprite {
+                    .#.#.
+                    .....
                     #...#
                     .###.
                 };
@@ -32,6 +45,7 @@ fn main() {
 
         constructor {
             spawn FpsTest;
+            spawn Smile;
         }
     ").unwrap();
     let mut interpreter = Interpreter::with_declarations(&declarations).unwrap();
@@ -42,8 +56,22 @@ fn main() {
         interpreter.execute_tick().unwrap();
 
         let mut d = rl.begin_drawing(&thread);
-
         d.clear_background(Color::WHITE);
-        d.draw_text("Hello, world!", 12, 12, 20, Color::BLACK);
+
+        for draw_op in interpreter.execute_draw().unwrap() {
+            let base_x = draw_op.x as i32 * PIXEL_SIZE;
+            let base_y = draw_op.y as i32 * PIXEL_SIZE;
+            
+            for dx in 0..draw_op.sprite.width {
+                for dy in 0..draw_op.sprite.height {
+                    if draw_op.sprite.pixels[dy * draw_op.sprite.width + dx] == Pixel::Set {
+                        let canvas_x = base_x + dx as i32 * PIXEL_SIZE;
+                        let canvas_y = base_y + dy as i32 * PIXEL_SIZE;
+            
+                        d.draw_rectangle(canvas_x, canvas_y, PIXEL_SIZE, PIXEL_SIZE, Color::BLACK);
+                    }
+                }
+            }
+        }
     }
 }

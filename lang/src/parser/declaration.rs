@@ -30,6 +30,7 @@ pub fn declaration(input: &str) -> IResult<&str, Declaration> {
         map((tag("entity"), ws1, identifier, ws0, declaration_body), |(_, _, name, _, body)| Declaration::EntityDeclaration { name, body }),
         map((tag("constructor"), ws0, statement_body), |(_, _, body)| Declaration::ConstructorDeclaration { body }),
         map((tag("tick"), ws0, statement_body), |(_, _, body)| Declaration::TickDeclaration { body }),
+        map((tag("draw"), ws0, statement_body), |(_, _, body)| Declaration::DrawDeclaration { body }),
         map((tag("declare"), ws1, instance_var_identifier, ws0, tag(";")), |(_, _, name, _, _)| Declaration::InstanceVarDeclaration { name }),
         // TODO: function
     )).parse(input)
