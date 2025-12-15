@@ -175,9 +175,34 @@ fn add_sub_expression(input: &str) -> IResult<&str, Expression> {
     Ok((input, expr))
 }
 
+fn cmp_expression(input: &str) -> IResult<&str, Expression> {
+    let (input, mut expr) = add_sub_expression(input)?;
+
+    let (input, ops) = many0((
+        ws0,
+        alt((tag("=="), tag("!="), tag("<"), tag(">"), tag("<="), tag(">="))),
+        ws0,
+        add_sub_expression,
+    )).parse(input)?;
+    for (_, op, _, right) in ops {
+        let operator = match op {
+            "==" => BinaryOperator::Equals,
+            "!=" => BinaryOperator::NotEquals,
+            "<" => BinaryOperator::LessThan,
+            ">" => BinaryOperator::GreaterThan,
+            "<=" => BinaryOperator::LessThanOrEquals,
+            ">=" => BinaryOperator::GreaterThanOrEquals,
+            _ => unreachable!(),
+        };
+        expr = Expression::BinaryOperation { left: Box::new(expr), right: Box::new(right), operator };
+    }
+
+    Ok((input, expr))
+}
+
 pub fn expression(input: &str) -> IResult<&str, Expression> {
     // TODO: binop
     // TODO: call
 
-    add_sub_expression(input)
+    cmp_expression(input)
 }

@@ -25,11 +25,32 @@ fn main() {
         }
         
         entity Smile {
-            var @x, @y;
+            var @x, @y, @move_cooldown;
 
             constructor {
                 @x = 2;
                 @y = 2;
+                @move_cooldown = 0;
+            }
+
+            tick {
+                if (@move_cooldown > 0) {
+                    @move_cooldown = @move_cooldown - 1;
+                }
+
+                if (Input.down_pressed()) {
+                    if (@move_cooldown == 0) {
+                        @y = @y + 1;
+                        @move_cooldown = 3;
+                    }
+                }
+
+                if (Input.up_pressed()) {
+                    if (@move_cooldown == 0) {
+                        @y = @y - 1;
+                        @move_cooldown = 3;
+                    }
+                }
             }
 
             draw {
@@ -42,16 +63,9 @@ fn main() {
             }
         }
 
-        entity InputMonitor {
-            tick {
-                echo Input.up_pressed();
-            }
-        }
-
         constructor {
             spawn FpsTest;
             spawn Smile;
-            spawn InputMonitor;
         }
     ").unwrap();
     let mut interpreter = Interpreter::with_declarations(&declarations).unwrap();

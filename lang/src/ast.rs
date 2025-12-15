@@ -26,6 +26,11 @@ pub enum Declaration {
 #[derive(Debug, Clone)]
 pub enum Statement {
     Expression(Expression),
+    IfConditional {
+        condition: Expression,
+        true_body: Vec<Statement>,
+        false_body: Option<Vec<Statement>>,
+    },
     Assignment {
         target: Expression,
         value: Expression,
@@ -69,6 +74,13 @@ pub enum BinaryOperator {
     Subtract,
     Multiply,
     Divide,
+
+    Equals,
+    NotEquals,
+    LessThan,
+    GreaterThan,
+    LessThanOrEquals,
+    GreaterThanOrEquals,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

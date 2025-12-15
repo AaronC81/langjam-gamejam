@@ -2,7 +2,7 @@ use std::error::Error;
 
 use nom::{IResult, Parser, bytes::complete::{tag, take_while, take_while1}, character::complete::satisfy, combinator::map, multi::many0};
 
-use crate::Declaration;
+use crate::{Declaration, Statement};
 
 mod expression;
 mod statement;
@@ -35,6 +35,29 @@ fn identifier(input: &str) -> IResult<&str, String> {
 fn instance_var_identifier(input: &str) -> IResult<&str, String> {
     let (input, _) = tag("@")(input)?;
     identifier(input)
+}
+
+fn braced_body<'a, T>(inner: impl Fn(&str) -> IResult<&str, T>) -> impl Parser<&'a str, Output = Vec<T>, Error = nom::error::Error<&'a str>> {
+    map(
+        (
+            ws0,
+            tag("{"),
+            many0(
+                map((ws0, inner, ws0), |(_, i, _)| i),
+            ),
+            tag("}"),
+            ws0,
+        ),
+        |(_, _, s, _, _)| s,
+    )
+}
+
+fn statement_body(input: &str) -> IResult<&str, Vec<Statement>> {
+    braced_body(statement::statement).parse(input)
+}
+
+fn declaration_body(input: &str) -> IResult<&str, Vec<Declaration>> {
+    braced_body(declaration::declaration).parse(input)
 }
 
 pub fn parse(input: &str) -> Result<Vec<Declaration>, Box<dyn Error + '_>> {

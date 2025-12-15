@@ -82,8 +82,8 @@ impl Interpreter {
                 };
 
                 match self.execute_statement_body(draw, &mut frame)? {
-                    Object::Null => {},
-                    Object::Sprite(sprite) => {
+                    ControlFlow::Continue(_) | ControlFlow::Break(Object::Null) => {},
+                    ControlFlow::Break(Object::Sprite(sprite)) => {
                         let (x, y) = self.entities[&id].draw_position_ivars()?;
                         draw_ops.push(DrawOperation { x, y, sprite })
                     },
@@ -96,15 +96,15 @@ impl Interpreter {
         Ok(draw_ops)
     }
 
-    fn execute_statement_body(&mut self, body: &[Statement], frame: &mut Frame) -> InterpreterResult<Object> {
+    fn execute_statement_body(&mut self, body: &[Statement], frame: &mut Frame) -> InterpreterResult<ControlFlow<Object>> {
         for stmt in body {
             match self.interpret_statement(stmt, frame)? {
-                ControlFlow::Break(retval) => return Ok(retval),
+                ControlFlow::Break(retval) => return Ok(ControlFlow::Break(retval)),
                 ControlFlow::Continue(_) => {},
             }
         }
 
-        Ok(Object::Null)
+        Ok(ControlFlow::Continue(()))
     }
 
     pub fn entities(&self) -> impl Iterator<Item = &Entity> {
@@ -227,6 +227,20 @@ impl Interpreter {
 
                 Ok(ControlFlow::Continue(()))
             }
+            Statement::IfConditional { condition, true_body, false_body } => {
+                let condition = self.interpret_expression(condition, frame)?.read()?;
+                let Object::Boolean(condition) = condition else {
+                    return Err(RuntimeError::new("if-condition must be a boolean"));
+                };
+
+                if condition {
+                    self.execute_statement_body(&true_body, frame)
+                } else if let Some(false_body) = false_body {
+                    self.execute_statement_body(&false_body, frame)
+                } else {
+                    Ok(ControlFlow::Continue(()))
+                }
+            }
             Statement::Assignment { target, value } => {
                 let value = self.interpret_expression(value, frame)?.read()?;
                 self.interpret_expression(target, frame)?.write(value)?;
@@ -320,7 +334,11 @@ impl Interpreter {
                             locals: parameters.iter().cloned().zip(arguments).collect(),
                         };
 
-                        Ok(Value::ReadOnly(self.execute_statement_body(&body, &mut frame)?))
+                        let retval = match self.execute_statement_body(&body, &mut frame)? {
+                            ControlFlow::Break(obj) => obj,
+                            ControlFlow::Continue(_) => Object::Null,
+                        };
+                        Ok(Value::ReadOnly(retval))
                     },
 
                     Object::InputSingleton => {
@@ -349,18 +367,28 @@ impl Interpreter {
                 let left = self.interpret_expression(&left, frame)?.read()?;
                 let right = self.interpret_expression(&right, frame)?.read()?;
 
-                let (Object::Number(left), Object::Number(right)) = (left, right) else {
-                    return Err(RuntimeError::new(format!("both sides of binary operator must be numbers")));
-                };
+                fn numeric(left: Object, right: Object, f: impl FnOnce(f64, f64) -> Object) -> InterpreterResult<Object> {
+                    let (Object::Number(left), Object::Number(right)) = (left, right) else {
+                        return Err(RuntimeError::new(format!("both sides of binary operator must be numbers")));
+                    };
+                    Ok(f(left, right))
+                }
 
-                Ok(Value::ReadOnly(Object::Number(
+                Ok(Value::ReadOnly(
                     match operator {
-                        BinaryOperator::Add => left + right,
-                        BinaryOperator::Subtract => left - right,
-                        BinaryOperator::Multiply => left * right,
-                        BinaryOperator::Divide => left / right,
+                        BinaryOperator::Add => numeric(left, right, |l, r| Object::Number(l + r))?,
+                        BinaryOperator::Subtract => numeric(left, right, |l, r| Object::Number(l - r))?,
+                        BinaryOperator::Multiply => numeric(left, right, |l, r| Object::Number(l * r))?,
+                        BinaryOperator::Divide => numeric(left, right, |l, r| Object::Number(l / r))?,
+
+                        BinaryOperator::Equals => Object::Boolean(left == right),
+                        BinaryOperator::NotEquals => Object::Boolean(left != right),
+                        BinaryOperator::LessThan => numeric(left, right, |l, r| Object::Boolean(l < r))?,
+                        BinaryOperator::GreaterThan => numeric(left, right, |l, r| Object::Boolean(l > r))?,
+                        BinaryOperator::LessThanOrEquals => numeric(left, right, |l, r| Object::Boolean(l <= r))?,
+                        BinaryOperator::GreaterThanOrEquals => numeric(left, right, |l, r| Object::Boolean(l >= r))?,
                     }
-                )))
+                ))
             }
 
             Expression::AddEntity { name } => {
