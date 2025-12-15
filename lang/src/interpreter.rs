@@ -173,15 +173,18 @@ impl Interpreter {
                 Ok(())
             }
 
-            Declaration::InstanceVarDeclaration { name } => {
+            Declaration::InstanceVarDeclaration { names } => {
                 let Some(target) = target else {
                     return Err(RuntimeError::new("instance variable declarations cannot appear outside of an entity"));
                 };
-                if target.ivars.contains(name) {
-                    return Err(RuntimeError::new(format!("instance variable `{name}` is already declared")));
-                }
 
-                target.ivars.push(name.to_owned());
+                for name in names {
+                    if target.ivars.contains(name) {
+                        return Err(RuntimeError::new(format!("instance variable `{name}` is already declared")));
+                    }
+
+                    target.ivars.push(name.to_owned());
+                }
                 Ok(())
             }
 

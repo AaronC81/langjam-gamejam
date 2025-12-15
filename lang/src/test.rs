@@ -7,7 +7,7 @@ fn test_basic_interpreter() {
     interpreter.interpret_declaration(&Declaration::EntityDeclaration {
         name: "Player".to_owned(),
         body: vec![
-            Declaration::InstanceVarDeclaration { name: "score".to_owned() },
+            Declaration::InstanceVarDeclaration { names: vec!["score".to_owned()] },
             Declaration::ConstructorDeclaration { body: vec![
                 Statement::Assignment {
                     target: Expression::InstanceVarIdentifier("score".to_owned()),

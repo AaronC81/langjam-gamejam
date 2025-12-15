@@ -14,7 +14,7 @@ pub enum Declaration {
         body: Vec<Statement>,
     },
     InstanceVarDeclaration {
-        name: String,
+        names: Vec<String>,
     },
     FunctionDeclaration {
         name: String,

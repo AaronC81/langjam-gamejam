@@ -12,7 +12,7 @@ fn main() {
 
     let declarations = parse("
         entity FpsTest {
-            declare @ticks;
+            var @ticks;
 
             constructor {
                 @ticks = 0;
@@ -25,8 +25,7 @@ fn main() {
         }
         
         entity Smile {
-            declare @x;
-            declare @y;
+            var @x, @y;
 
             constructor {
                 @x = 2;
