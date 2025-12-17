@@ -1,16 +1,16 @@
 use std::{collections::HashMap, error::Error, fmt::Display, ops::ControlFlow, rc::Rc};
 
-use crate::{BinaryOperator, Declaration, Expression, Sprite, Statement};
+use crate::{BinaryOperator, Declaration, Expression, Object, Sprite, Statement};
 
 pub struct Interpreter {
     top_level_constructor: Vec<Statement>,
 
-    entities: HashMap<EntityId, Entity>,
+    pub(crate) entities: HashMap<EntityId, Entity>,
     next_entity_id: usize,
 
     entity_kinds: HashMap<String, Rc<EntityKind>>,
 
-    input_report: InputReport,
+    pub(crate) input_report: InputReport,
 }
 
 pub type InterpreterResult<T = ()> = Result<T, RuntimeError>;
@@ -96,7 +96,7 @@ impl Interpreter {
         Ok(draw_ops)
     }
 
-    fn execute_statement_body(&mut self, body: &[Statement], frame: &mut Frame) -> InterpreterResult<ControlFlow<Object>> {
+    pub(crate) fn execute_statement_body(&mut self, body: &[Statement], frame: &mut Frame) -> InterpreterResult<ControlFlow<Object>> {
         for stmt in body {
             match self.interpret_statement(stmt, frame)? {
                 ControlFlow::Break(retval) => return Ok(ControlFlow::Break(retval)),
@@ -350,7 +350,7 @@ impl Interpreter {
                         .map(|arg| self.interpret_expression(arg, frame).map(|v| v.read()).flatten())
                         .collect::<Result<Vec<_>, _>>()?;
                 
-                Ok(Value::ReadOnly(self.call_function(target, name, arguments)?))
+                Ok(Value::ReadOnly(target.call_function(self, name, arguments)?))
             }
 
             Expression::BinaryOperation { left, right, operator } => {
@@ -414,131 +414,9 @@ impl Interpreter {
 
             Expression::Echo(target) => {
                 let target = self.interpret_expression(target, frame)?.read()?;
-                println!("{}", self.describe_object(&target));
+                println!("{}", target.describe(self));
                 Ok(Value::ReadOnly(target))
             }
-        }
-    }
-
-    fn call_function(&mut self, target: Object, name: &str, arguments: Vec<Object>) -> InterpreterResult<Object> {
-        match target {
-            Object::Entity(entity_id) => {
-                let entity_kind = self.entities[&entity_id].kind.clone();
-                let Some(FunctionDeclaration { parameters, body, .. }) = entity_kind.functions.get(name) else {
-                    return Err(RuntimeError::new(format!("entity declaration `{}` has no function named `{}`", entity_kind.name, name)));
-                };
-
-                if parameters.len() != arguments.len() {
-                    Self::incorrect_arity(name, parameters.len(), arguments.len())?;
-                }
-
-                let mut frame = Frame {
-                    entity: Some(entity_id),
-                    locals: parameters.iter().cloned().zip(arguments).collect(),
-                };
-
-                let retval = match self.execute_statement_body(&body, &mut frame)? {
-                    ControlFlow::Break(obj) => obj,
-                    ControlFlow::Continue(_) => Object::Null,
-                };
-                Ok(retval)
-            },
-
-            Object::EntityKind(ref kind) => {
-                // All `EntityKind` functions take no parameters
-                if arguments.len() != 0 {
-                    Self::incorrect_arity(name, 0, arguments.len())?;
-                }
-
-                match name {
-                    "all" => {
-                        let entities_of_kind = self.entities.iter()
-                            .filter_map(|(id, e)|
-                                if e.kind == *kind {
-                                    Some(Object::Entity(*id))
-                                } else {
-                                    None
-                                }
-                            )
-                            .collect::<Vec<_>>();
-
-                        Ok(Object::Array(entities_of_kind))
-                    },
-
-                    _ => Err(RuntimeError::new(format!("`{}` has no function named `{}`", self.describe_object(&target), name))),
-                }
-            },
-
-            Object::Sprite(ref sprite) => {
-                // All `Sprite` functions take no parameters
-                if arguments.len() != 0 {
-                    Self::incorrect_arity(name, 0, arguments.len())?;
-                }
-
-                match name {
-                    "width" => Ok(Object::Number(sprite.width as f64)),
-                    "height" => Ok(Object::Number(sprite.height as f64)),
-
-                    _ => Err(RuntimeError::new(format!("sprite has no function named `{}`", name))),
-                }
-            }
-
-            Object::InputSingleton => {
-                // All `Input` functions take no parameters
-                if arguments.len() != 0 {
-                    Self::incorrect_arity(name, 0, arguments.len())?;
-                }
-
-                match name {
-                    "up_pressed" => Ok(Object::Boolean(self.input_report.up)),
-                    "down_pressed" => Ok(Object::Boolean(self.input_report.down)),
-                    "left_pressed" => Ok(Object::Boolean(self.input_report.left)),
-                    "right_pressed" => Ok(Object::Boolean(self.input_report.right)),
-                    "x_pressed" => Ok(Object::Boolean(self.input_report.x)),
-                    "z_pressed" => Ok(Object::Boolean(self.input_report.z)),
-
-                    _ => Err(RuntimeError::new(format!("`Input` has no function named `{}`", name))),
-                }
-            }
-
-            _ => Err(RuntimeError::new(format!("cannot call function `{name}` on an object that doesn't have functions"))),
-        }
-    }
-
-    fn incorrect_arity(name: &str, expected: usize, actual: usize) -> Result<!, RuntimeError> {
-        Err(RuntimeError::new(format!("function declaration for `{}` has {} parameters, but {} arguments were provided", name, expected, actual)))
-    }
-
-    fn describe_object(&self, obj: &Object) -> String {
-        match obj {
-            Object::Null => "null".to_owned(),
-            Object::Number(n) => n.to_string(),
-            Object::Boolean(b) => b.to_string(),
-            Object::Entity(entity_id) => {
-                if let Some(entity) = self.entities.get(&entity_id) {
-                    let ivars = entity.ivars.iter()
-                        .map(|(k, v)| format!("{}={}", k, self.describe_object(v)))
-                        .collect::<Vec<_>>()
-                        .join(", ");
-                    format!("Entity {} ({})", entity.kind.name, ivars)
-                } else {
-                    "destroyed entity".to_owned()
-                }
-            },
-            Object::EntityKind(kind) => {
-                format!("Entity Declaration {}", kind.name)
-            },
-            Object::Sprite(sprite) =>
-                format!("sprite ({}x{})", sprite.width, sprite.height),
-            Object::Array(items) => {
-                if items.is_empty() {
-                    "[ ]".to_string()
-                } else {
-                    format!("[ {} ]", items.iter().map(|i| self.describe_object(i)).collect::<Vec<_>>().join(", "))
-                }
-            },
-            
-            Object::InputSingleton => "Input".to_owned(),
         }
     }
 }
@@ -584,20 +462,6 @@ impl<'w> Value<'w> {
     }
 }
 
-/// Some generic object which can be passed around the interpreter.
-#[derive(Debug, Clone, PartialEq)]
-pub enum Object {
-    Null,
-    Number(f64),
-    Boolean(bool),
-    Entity(EntityId),
-    EntityKind(Rc<EntityKind>),
-    Sprite(Sprite),
-    Array(Vec<Object>),
-
-    InputSingleton,
-}
-
 /// Uniquely refers to an entity. Allows entities to be passed around like objects.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct EntityId(usize);
@@ -628,12 +492,12 @@ impl Entity {
 /// An entity definition which can be instantiated.
 #[derive(Debug, Clone)]
 pub struct EntityKind {
-    name: String,
-    functions: HashMap<String, FunctionDeclaration>,
-    constructor: Option<Vec<Statement>>,
-    tick_handler: Option<Vec<Statement>>,
-    draw_handler: Option<Vec<Statement>>,
-    ivars: Vec<String>,
+    pub name: String,
+    pub functions: HashMap<String, FunctionDeclaration>,
+    pub constructor: Option<Vec<Statement>>,
+    pub tick_handler: Option<Vec<Statement>>,
+    pub draw_handler: Option<Vec<Statement>>,
+    pub ivars: Vec<String>,
 }
 
 impl PartialEq for EntityKind {
@@ -645,9 +509,9 @@ impl PartialEq for EntityKind {
 
 #[derive(Debug, Clone)]
 pub struct FunctionDeclaration {
-    name: String,
-    parameters: Vec<String>,
-    body: Vec<Statement>,
+    pub name: String,
+    pub parameters: Vec<String>,
+    pub body: Vec<Statement>,
 }
 
 pub struct DrawOperation {
@@ -672,10 +536,10 @@ pub struct InputReport {
 
 pub struct Frame {
     /// Local variable definitions
-    locals: HashMap<String, Object>,
+    pub locals: HashMap<String, Object>,
 
     /// The current entity, for instance variable lookup
-    entity: Option<EntityId>,
+    pub entity: Option<EntityId>,
 }
 
 #[derive(Debug, Clone)]

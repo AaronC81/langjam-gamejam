@@ -8,3 +8,6 @@ pub use interpreter::*;
 
 mod parser;
 pub use parser::*;
+
+mod object;
+pub use object::*;
