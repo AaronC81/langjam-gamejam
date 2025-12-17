@@ -1,27 +1,17 @@
-entity FpsTest {
-    var @ticks;
-
-    constructor {
-        @ticks = 0;
-    }
-
-    tick {
-        @ticks = @ticks + 1;
-        echo @ticks;
-    }
-}
-
-entity Smile {
-    var @x, @y, @move_cooldown;
+entity Ship {
+    var @x, @y, @move_cooldown, @fire_cooldown;
 
     constructor {
         @x = 2;
         @y = 2;
         @move_cooldown = 0;
+
+        @fire_cooldown = 0;
     }
 
     tick {
         this.tick_movement();
+        this.tick_fire();
     }
 
     func tick_movement() {
@@ -44,17 +34,58 @@ entity Smile {
         }
     }
 
+    func tick_fire() {
+        if (@fire_cooldown > 0) {
+            @fire_cooldown = @fire_cooldown - 1;
+        }
+
+        if (Input.z_pressed()) {
+            if (@fire_cooldown == 0) {
+                bullet = spawn ShipBullet;
+                bullet.move_to(@x + 4, @y + 2);
+
+                @fire_cooldown = 5;
+            }
+        }
+    }
+
     draw {
         return sprite {
-            .#.#.
-            .....
-            #...#
-            .###.
+            ##..
+            .##.
+            .###
+            .##.
+            ##..
         };
     }
 }
 
+entity ShipBullet {
+    var @x, @y;
+
+    constructor {
+        @x = 1;
+        @y = 1;
+    }
+
+    tick {
+        @x = @x + 1;
+
+        if (@x > Display.width()) {
+            destroy this;
+        }
+    }
+
+    func move_to(x, y) {
+        @x = x;
+        @y = y;
+    }
+
+    draw {
+        return sprite { # };
+    }
+}
+
 constructor {
-    spawn FpsTest;
-    spawn Smile;
+    spawn Ship;
 }
