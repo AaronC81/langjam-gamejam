@@ -281,6 +281,12 @@ impl Interpreter {
                     return Ok(Value::ReadOnly(Object::InputSingleton))
                 }
 
+                // Look for entity kinds
+                if let Some(kind) = self.entity_kinds.get(id) {
+                    return Ok(Value::ReadOnly(Object::EntityKind(kind.clone())))
+                }
+
+                // Finally, locals
                 if let Some(obj) = frame.locals.get(id) {
                     Ok(Value::ReadWrite {
                         value: obj.clone(),
@@ -322,53 +328,11 @@ impl Interpreter {
 
             Expression::FunctionCall { target, name, arguments } => {
                 let target = self.interpret_expression(&target, frame)?.read()?;
-                match target {
-                    Object::Entity(entity_id) => {
-                        let entity_kind = self.entities[&entity_id].kind.clone();
-                        let Some(FunctionDeclaration { parameters, body, .. }) = entity_kind.functions.get(name) else {
-                            return Err(RuntimeError::new(format!("entity declaration `{}` has no function named `{}`", entity_kind.name, name)));
-                        };
-
-                        if parameters.len() != arguments.len() {
-                            return Err(RuntimeError::new(format!("function declaration for `{}` has {} parameters, but {} arguments were provided", name, parameters.len(), arguments.len())));
-                        }
-
-                        let arguments = arguments.iter()
-                            .map(|arg| self.interpret_expression(arg, frame).map(|v| v.read()).flatten())
-                            .collect::<Result<Vec<_>, _>>()?;
-
-                        let mut frame = Frame {
-                            entity: Some(entity_id),
-                            locals: parameters.iter().cloned().zip(arguments).collect(),
-                        };
-
-                        let retval = match self.execute_statement_body(&body, &mut frame)? {
-                            ControlFlow::Break(obj) => obj,
-                            ControlFlow::Continue(_) => Object::Null,
-                        };
-                        Ok(Value::ReadOnly(retval))
-                    },
-
-                    Object::InputSingleton => {
-                        // All `Input` functions take no parameters
-                        if arguments.len() != 0 {
-                            return Err(RuntimeError::new(format!("function declaration for `{}` has 0 parameters, but {} arguments were provided", name, arguments.len())));
-                        }
-
-                        match name.as_str() {
-                            "up_pressed" => Ok(Value::ReadOnly(Object::Boolean(self.input_report.up))),
-                            "down_pressed" => Ok(Value::ReadOnly(Object::Boolean(self.input_report.down))),
-                            "left_pressed" => Ok(Value::ReadOnly(Object::Boolean(self.input_report.left))),
-                            "right_pressed" => Ok(Value::ReadOnly(Object::Boolean(self.input_report.right))),
-                            "x_pressed" => Ok(Value::ReadOnly(Object::Boolean(self.input_report.x))),
-                            "z_pressed" => Ok(Value::ReadOnly(Object::Boolean(self.input_report.z))),
-
-                            _ => Err(RuntimeError::new(format!("`Input` has no function named `{}`", name))),
-                        }
-                    }
-
-                    _ => Err(RuntimeError::new(format!("cannot call function `{name}` on an object that doesn't have functions"))),
-                }
+                let arguments = arguments.iter()
+                        .map(|arg| self.interpret_expression(arg, frame).map(|v| v.read()).flatten())
+                        .collect::<Result<Vec<_>, _>>()?;
+                
+                Ok(Value::ReadOnly(self.call_function(target, name, arguments)?))
             }
 
             Expression::BinaryOperation { left, right, operator } => {
@@ -438,6 +402,77 @@ impl Interpreter {
         }
     }
 
+    fn call_function(&mut self, target: Object, name: &str, arguments: Vec<Object>) -> InterpreterResult<Object> {
+        match target {
+            Object::Entity(entity_id) => {
+                let entity_kind = self.entities[&entity_id].kind.clone();
+                let Some(FunctionDeclaration { parameters, body, .. }) = entity_kind.functions.get(name) else {
+                    return Err(RuntimeError::new(format!("entity declaration `{}` has no function named `{}`", entity_kind.name, name)));
+                };
+
+                if parameters.len() != arguments.len() {
+                    return Err(RuntimeError::new(format!("function declaration for `{}` has {} parameters, but {} arguments were provided", name, parameters.len(), arguments.len())));
+                }
+
+                let mut frame = Frame {
+                    entity: Some(entity_id),
+                    locals: parameters.iter().cloned().zip(arguments).collect(),
+                };
+
+                let retval = match self.execute_statement_body(&body, &mut frame)? {
+                    ControlFlow::Break(obj) => obj,
+                    ControlFlow::Continue(_) => Object::Null,
+                };
+                Ok(retval)
+            },
+
+            Object::EntityKind(ref kind) => {
+                // All `EntityKind` functions take no parameters
+                if arguments.len() != 0 {
+                    return Err(RuntimeError::new(format!("function declaration for `{}` has 0 parameters, but {} arguments were provided", name, arguments.len())));
+                }
+
+                match name {
+                    "all" => {
+                        let entities_of_kind = self.entities.iter()
+                            .filter_map(|(id, e)|
+                                if e.kind == *kind {
+                                    Some(Object::Entity(*id))
+                                } else {
+                                    None
+                                }
+                            )
+                            .collect::<Vec<_>>();
+
+                        Ok(Object::Array(entities_of_kind))
+                    },
+
+                    _ => Err(RuntimeError::new(format!("`{}` has no function named `{}`", self.describe_object(&target), name))),
+                }
+            },
+
+            Object::InputSingleton => {
+                // All `Input` functions take no parameters
+                if arguments.len() != 0 {
+                    return Err(RuntimeError::new(format!("function declaration for `{}` has 0 parameters, but {} arguments were provided", name, arguments.len())));
+                }
+
+                match name {
+                    "up_pressed" => Ok(Object::Boolean(self.input_report.up)),
+                    "down_pressed" => Ok(Object::Boolean(self.input_report.down)),
+                    "left_pressed" => Ok(Object::Boolean(self.input_report.left)),
+                    "right_pressed" => Ok(Object::Boolean(self.input_report.right)),
+                    "x_pressed" => Ok(Object::Boolean(self.input_report.x)),
+                    "z_pressed" => Ok(Object::Boolean(self.input_report.z)),
+
+                    _ => Err(RuntimeError::new(format!("`Input` has no function named `{}`", name))),
+                }
+            }
+
+            _ => Err(RuntimeError::new(format!("cannot call function `{name}` on an object that doesn't have functions"))),
+        }
+    }
+
     fn describe_object(&self, obj: &Object) -> String {
         match obj {
             Object::Null => "null".to_owned(),
@@ -453,6 +488,9 @@ impl Interpreter {
                 } else {
                     "destroyed entity".to_owned()
                 }
+            },
+            Object::EntityKind(kind) => {
+                format!("Entity Declaration {}", kind.name)
             },
             Object::Sprite(sprite) =>
                 format!("sprite ({}x{})", sprite.width, sprite.height),
@@ -517,6 +555,7 @@ pub enum Object {
     Number(f64),
     Boolean(bool),
     Entity(EntityId),
+    EntityKind(Rc<EntityKind>),
     Sprite(Sprite),
     Array(Vec<Object>),
 
@@ -551,6 +590,7 @@ impl Entity {
 }
 
 /// An entity definition which can be instantiated.
+#[derive(Debug, Clone)]
 pub struct EntityKind {
     name: String,
     functions: HashMap<String, FunctionDeclaration>,
@@ -560,6 +600,14 @@ pub struct EntityKind {
     ivars: Vec<String>,
 }
 
+impl PartialEq for EntityKind {
+    fn eq(&self, other: &Self) -> bool {
+        // The interpreter won't permit multiple kinds with the same name to be defined
+        self.name == other.name
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct FunctionDeclaration {
     name: String,
     parameters: Vec<String>,
