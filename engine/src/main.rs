@@ -34,6 +34,8 @@ fn main() {
         });
         interpreter.execute_tick().unwrap();
 
+        let fps = rl.get_fps();
+
         let mut d = rl.begin_drawing(&thread);
         d.clear_background(Color::WHITE);
 
@@ -52,5 +54,7 @@ fn main() {
                 }
             }
         }
+
+        d.draw_text(&fps.to_string(), 1, 1, 8, Color::BLACK);
     }
 }
