@@ -411,7 +411,7 @@ impl Interpreter {
                 };
 
                 if parameters.len() != arguments.len() {
-                    return Err(RuntimeError::new(format!("function declaration for `{}` has {} parameters, but {} arguments were provided", name, parameters.len(), arguments.len())));
+                    Self::incorrect_arity(name, parameters.len(), arguments.len())?;
                 }
 
                 let mut frame = Frame {
@@ -429,7 +429,7 @@ impl Interpreter {
             Object::EntityKind(ref kind) => {
                 // All `EntityKind` functions take no parameters
                 if arguments.len() != 0 {
-                    return Err(RuntimeError::new(format!("function declaration for `{}` has 0 parameters, but {} arguments were provided", name, arguments.len())));
+                    Self::incorrect_arity(name, 0, arguments.len())?;
                 }
 
                 match name {
@@ -451,10 +451,24 @@ impl Interpreter {
                 }
             },
 
+            Object::Sprite(ref sprite) => {
+                // All `Sprite` functions take no parameters
+                if arguments.len() != 0 {
+                    Self::incorrect_arity(name, 0, arguments.len())?;
+                }
+
+                match name {
+                    "width" => Ok(Object::Number(sprite.width as f64)),
+                    "height" => Ok(Object::Number(sprite.height as f64)),
+
+                    _ => Err(RuntimeError::new(format!("sprite has no function named `{}`", name))),
+                }
+            }
+
             Object::InputSingleton => {
                 // All `Input` functions take no parameters
                 if arguments.len() != 0 {
-                    return Err(RuntimeError::new(format!("function declaration for `{}` has 0 parameters, but {} arguments were provided", name, arguments.len())));
+                    Self::incorrect_arity(name, 0, arguments.len())?;
                 }
 
                 match name {
@@ -471,6 +485,10 @@ impl Interpreter {
 
             _ => Err(RuntimeError::new(format!("cannot call function `{name}` on an object that doesn't have functions"))),
         }
+    }
+
+    fn incorrect_arity(name: &str, expected: usize, actual: usize) -> Result<!, RuntimeError> {
+        Err(RuntimeError::new(format!("function declaration for `{}` has {} parameters, but {} arguments were provided", name, expected, actual)))
     }
 
     fn describe_object(&self, obj: &Object) -> String {
