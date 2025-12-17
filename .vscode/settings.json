@@ -27,5 +27,14 @@
             "filterFileRegex": ".*\\.utl",
             "regexFlags": "g"
         },
+        "(/\\*.+\\*/)": {
+            "decorations": [
+                {
+                    "color": "green"
+                }
+            ],
+            "filterFileRegex": ".*\\.utl",
+            "regexFlags": "g"
+        }
     }
 }

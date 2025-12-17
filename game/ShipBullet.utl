@@ -20,6 +20,8 @@ entity ShipBullet {
     }
 
     func has_hit(x, y, w, h) {
+        /* No boolean operators yet, so this will do! */
+        /* TODO: check this calculation isn't off-by-one */
         if (@x < x) { return false; }
         if (@y < y) { return false; }
         if (@x > x + w) { return false; }

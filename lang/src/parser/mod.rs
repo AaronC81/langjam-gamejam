@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use nom::{IResult, Parser, bytes::complete::{tag, take_while, take_while1}, character::complete::satisfy, combinator::map, multi::many0};
+use nom::{IResult, Parser, branch::alt, bytes::complete::{tag, take_until, take_while, take_while1}, character::complete::{anychar, satisfy}, combinator::{map, recognize}, multi::{many0, many1}};
 
 use crate::{Declaration, Statement};
 
@@ -8,12 +8,26 @@ mod expression;
 mod statement;
 mod declaration;
 
+fn comment(input: &str) -> IResult<&str, &str> {
+    recognize(
+        (tag("/*"), take_until("*/"), tag("*/")),
+    ).parse(input)
+}
+
 fn ws1(input: &str) -> IResult<&str, &str> {
-    take_while1(char::is_whitespace)(input)
+    recognize(
+        many1(
+            alt((comment, take_while1(char::is_whitespace)))
+        )
+    ).parse(input)
 }
 
 fn ws0(input: &str) -> IResult<&str, &str> {
-    take_while(char::is_whitespace)(input)
+    recognize(
+        many0(
+            alt((comment, take_while1(char::is_whitespace)))
+        )
+    ).parse(input)
 }
 
 fn identifier(input: &str) -> IResult<&str, String> {
