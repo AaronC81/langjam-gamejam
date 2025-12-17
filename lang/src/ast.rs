@@ -31,6 +31,11 @@ pub enum Statement {
         true_body: Vec<Statement>,
         false_body: Option<Vec<Statement>>,
     },
+    EachLoop {
+        variable: String,
+        source: Expression,
+        body: Vec<Statement>,
+    },
     Assignment {
         target: Expression,
         value: Expression,

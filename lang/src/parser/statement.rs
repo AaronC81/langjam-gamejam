@@ -1,28 +1,55 @@
 use nom::{IResult, Parser, branch::alt, bytes::complete::tag, character::complete::char, combinator::map};
 
-use crate::{Statement, parser::{expression::expression, statement_body, ws0, ws1}};
+use crate::{Expression, Statement, parser::{expression::expression, identifier, statement_body, ws0, ws1}};
+
+fn parenthesised_expression(input: &str) -> IResult<&str, Expression> {
+    map(
+        (
+            char('('),
+            ws0,
+            expression,
+            ws0,
+            char(')'),
+        ),
+        |(_, _, e, _, _)| e
+    ).parse(input)
+}
 
 fn if_statement(input: &str) -> IResult<&str, Statement> {
     map(
         (
             tag("if"),
             ws0,
-            char('('),
-            ws0,
-            expression,
-            ws0,
-            char(')'),
+            parenthesised_expression,
             ws0,
             statement_body,
             // TODO: `else`
         ),
-        |(_, _, _, _, condition, _, _, _, true_body)| Statement::IfConditional { condition, true_body, false_body: None }
+        |(_, _, condition, _, true_body)| Statement::IfConditional { condition, true_body, false_body: None }
+    ).parse(input)
+}
+
+fn each_loop(input: &str) -> IResult<&str, Statement> {
+    map(
+        (
+            tag("each"),
+            ws1,
+            identifier,
+            ws1,
+            tag("in"),
+            ws0,
+            parenthesised_expression,
+            ws0,
+            statement_body,
+        ),
+        |(_, _, variable, _, _, _, source, _, body)| Statement::EachLoop { variable, source, body }
     ).parse(input)
 }
 
 pub fn statement(input: &str) -> IResult<&str, Statement> {
     alt((
         if_statement,
+        each_loop,
         map((tag("return"), ws1, expression, ws0, tag(";")), |(_, _, e, _, _)| Statement::Return(e)),
         map(
             (expression, ws0, tag("="), ws0, expression, ws0, tag(";")),

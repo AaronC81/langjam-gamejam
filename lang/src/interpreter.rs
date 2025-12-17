@@ -241,6 +241,24 @@ impl Interpreter {
                     Ok(ControlFlow::Continue(()))
                 }
             }
+            Statement::EachLoop { variable, source, body } => {
+                let source = self.interpret_expression(source, frame)?.read()?;
+                let Object::Array(items) = source else {
+                    return Err(RuntimeError::new("loop source must be an array"));
+                };
+
+                for item in items {
+                    frame.locals.insert(variable.clone(), item);
+                    match self.execute_statement_body(body, frame)? {
+                        ControlFlow::Continue(_) => {},
+                        ControlFlow::Break(retval) => {
+                            return Ok(ControlFlow::Break(retval));
+                        },
+                    }
+                }
+
+                Ok(ControlFlow::Continue(()))
+            }
             Statement::Assignment { target, value } => {
                 let value = self.interpret_expression(value, frame)?.read()?;
                 self.interpret_expression(target, frame)?.write(value)?;
