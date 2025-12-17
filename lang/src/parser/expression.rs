@@ -78,6 +78,19 @@ fn spawn_expression(input: &str) -> IResult<&str, Expression> {
     ).parse(input)
 }
 
+fn array_expression(input: &str) -> IResult<&str, Expression> {
+    map(
+        (
+            char('['),
+            ws0,
+            separated_list0((ws0, char(','), ws0), expression),
+            ws0,
+            char(']'),
+        ),
+        |(_, _, items, _, _)| Expression::ArrayLiteral(items),
+    ).parse(input)
+}
+
 fn atom_expression(input: &str) -> IResult<&str, Expression> {
     alt((
         map(tag("null"), |_| Expression::NullLiteral),
@@ -86,6 +99,7 @@ fn atom_expression(input: &str) -> IResult<&str, Expression> {
         map(tag("false"), |_| Expression::BooleanLiteral(false)),
 
         sprite_expression,
+        array_expression,
 
         map(identifier, |id| Expression::Identifier(id)),
         map(instance_var_identifier, |id| Expression::InstanceVarIdentifier(id)),

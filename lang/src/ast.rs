@@ -44,6 +44,7 @@ pub enum Expression {
     NullLiteral,
     NumberLiteral(f64),
     BooleanLiteral(bool),
+    ArrayLiteral(Vec<Expression>),
     Identifier(String),
     InstanceVarIdentifier(String), // @var
 

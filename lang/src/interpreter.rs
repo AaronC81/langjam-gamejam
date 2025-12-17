@@ -267,6 +267,14 @@ impl Interpreter {
             Expression::NumberLiteral(n) => Ok(Value::ReadOnly(Object::Number(*n))),
             Expression::BooleanLiteral(b) => Ok(Value::ReadOnly(Object::Boolean(*b))),
 
+            Expression::ArrayLiteral(items) => {
+                let items = items.iter()
+                    .map(|e| self.interpret_expression(e, frame).map(|v| v.read()).flatten())
+                    .collect::<Result<Vec<_>, _>>()?;
+
+                Ok(Value::ReadOnly(Object::Array(items)))
+            }
+
             Expression::Identifier(id) => {
                 // Special identifiers!
                 if id == "Input" {
@@ -448,6 +456,13 @@ impl Interpreter {
             },
             Object::Sprite(sprite) =>
                 format!("sprite ({}x{})", sprite.width, sprite.height),
+            Object::Array(items) => {
+                if items.is_empty() {
+                    "[ ]".to_string()
+                } else {
+                    format!("[ {} ]", items.iter().map(|i| self.describe_object(i)).collect::<Vec<_>>().join(", "))
+                }
+            },
             
             Object::InputSingleton => "Input".to_owned(),
         }
@@ -503,6 +518,7 @@ pub enum Object {
     Boolean(bool),
     Entity(EntityId),
     Sprite(Sprite),
+    Array(Vec<Object>),
 
     InputSingleton,
 }
