@@ -202,7 +202,7 @@ fn cmp_expression(input: &str) -> IResult<&str, Expression> {
 
     let (input, ops) = many0((
         ws0,
-        alt((tag("=="), tag("!="), tag("<"), tag(">"), tag("<="), tag(">="))),
+        alt((tag("=="), tag("!="), tag("<="), tag(">="), tag("<"), tag(">"))),
         ws0,
         add_sub_expression,
     )).parse(input)?;
