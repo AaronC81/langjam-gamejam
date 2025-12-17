@@ -1,0 +1,31 @@
+{
+    "highlight.regexes": {
+        "\\b(entity|constructor|func|tick|draw|var|constructor|return)\\b": {
+            "decorations": [
+                {
+                    "color": "cornflowerblue"
+                }
+            ],
+            "filterFileRegex": ".*\\.utl",
+            "regexFlags": "g"
+        },
+        "\\b(spawn|destroy|sprite|each|in|if|this)\\b": {
+            "decorations": [
+                {
+                    "color": "salmon"
+                }
+            ],
+            "filterFileRegex": ".*\\.utl",
+            "regexFlags": "g"
+        },
+        "@\\b([a-zA-Z_][a-zA-Z0-9_]*.)": {
+            "decorations": [
+                {
+                    "color": "lightskyblue"
+                }
+            ],
+            "filterFileRegex": ".*\\.utl",
+            "regexFlags": "g"
+        },
+    }
+}
