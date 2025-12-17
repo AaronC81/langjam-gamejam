@@ -1,3 +1,6 @@
+use std::process::exit;
+
+use include_dir::{Dir, include_dir};
 use langjam_gamejam_lang::{BinaryOperator, Declaration, DisplayConfig, Expression, InputReport, Interpreter, Pixel, Statement, parse};
 use raylib::prelude::*;
 
@@ -6,6 +9,8 @@ const PIXEL_SIZE: i32 = 10;
 const WINDOW_WIDTH: i32 = 640;
 const WINDOW_HEIGHT: i32 = 480;
 
+const GAME_FILES: Dir = include_dir!("$CARGO_MANIFEST_DIR/../game");
+
 fn main() {
     let (mut rl, thread) = raylib::init()
         .size(WINDOW_WIDTH, WINDOW_HEIGHT)
@@ -13,7 +18,17 @@ fn main() {
         .build();
     rl.set_target_fps(60);
 
-    let declarations = parse(include_str!("../../game/main.utl")).unwrap();
+    let mut declarations = vec![];
+    for file in GAME_FILES.files() {
+        match parse(file.contents_utf8().unwrap()) {
+            Ok(decls) => declarations.extend(decls),
+            Err(err) => {
+                println!("Error loading `{}`: {}", file.path().to_string_lossy(), err);
+                exit(1);
+            }
+        }
+    }
+
     let mut interpreter = Interpreter::with_declarations(&declarations).unwrap();
 
     interpreter.update_display_config(DisplayConfig {
