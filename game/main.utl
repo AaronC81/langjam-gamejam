@@ -1,3 +1,5 @@
 constructor {
     spawn Ship;
+
+    spawn Enemy;
 }

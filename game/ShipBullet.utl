@@ -19,6 +19,15 @@ entity ShipBullet {
         @y = y;
     }
 
+    func has_hit(x, y, w, h) {
+        if (@x < x) { return false; }
+        if (@y < y) { return false; }
+        if (@x > x + w) { return false; }
+        if (@y > y + h) { return false; }
+
+        return true;
+    }
+
     draw {
         return sprite { # };
     }
