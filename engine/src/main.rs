@@ -1,17 +1,25 @@
-use langjam_gamejam_lang::{BinaryOperator, Declaration, Expression, InputReport, Interpreter, Pixel, Statement, parse};
+use langjam_gamejam_lang::{BinaryOperator, Declaration, DisplayConfig, Expression, InputReport, Interpreter, Pixel, Statement, parse};
 use raylib::prelude::*;
 
 const PIXEL_SIZE: i32 = 10;
 
+const WINDOW_WIDTH: i32 = 640;
+const WINDOW_HEIGHT: i32 = 480;
+
 fn main() {
     let (mut rl, thread) = raylib::init()
-        .size(640, 480)
+        .size(WINDOW_WIDTH, WINDOW_HEIGHT)
         .title("Hello, World")
         .build();
     rl.set_target_fps(60);
 
     let declarations = parse(include_str!("../../game/main.utl")).unwrap();
     let mut interpreter = Interpreter::with_declarations(&declarations).unwrap();
+
+    interpreter.update_display_config(DisplayConfig {
+        width: (WINDOW_WIDTH / PIXEL_SIZE) as usize,
+        height: (WINDOW_HEIGHT / PIXEL_SIZE) as usize,
+    });
 
     interpreter.execute_init().unwrap();
     while !rl.window_should_close() {

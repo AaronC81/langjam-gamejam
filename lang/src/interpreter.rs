@@ -11,6 +11,7 @@ pub struct Interpreter {
     entity_kinds: HashMap<String, Rc<EntityKind>>,
 
     pub(crate) input_report: InputReport,
+    pub(crate) display_config: DisplayConfig,
 }
 
 pub type InterpreterResult<T = ()> = Result<T, RuntimeError>;
@@ -23,6 +24,7 @@ impl Interpreter {
             next_entity_id: 1,
             entity_kinds: HashMap::new(),
             input_report: Default::default(),
+            display_config: Default::default(),
         }
     }
 
@@ -40,12 +42,16 @@ impl Interpreter {
             locals: HashMap::new(),
         };
 
-        self.execute_statement_body(&self.top_level_constructor.clone(), &mut frame)?;
+        let _ = self.execute_statement_body(&self.top_level_constructor.clone(), &mut frame)?;
         Ok(())
     }
 
     pub fn update_input_report(&mut self, report: InputReport) {
         self.input_report = report;
+    }
+
+    pub fn update_display_config(&mut self, config: DisplayConfig) {
+        self.display_config = config;
     }
 
     pub fn execute_tick(&mut self) -> InterpreterResult {
@@ -295,8 +301,10 @@ impl Interpreter {
 
             Expression::Identifier(id) => {
                 // Special identifiers!
-                if id == "Input" {
-                    return Ok(Value::ReadOnly(Object::InputSingleton))
+                match id.as_ref() {
+                    "Input" => return Ok(Value::ReadOnly(Object::InputSingleton)),
+                    "Display" => return Ok(Value::ReadOnly(Object::DisplaySingleton)),
+                    _ => {}, // Carry on
                 }
 
                 // Look for entity kinds
@@ -532,6 +540,13 @@ pub struct InputReport {
 
     pub x: bool,
     pub z: bool,
+}
+
+/// State of the display which this interpreter is rendering to. 
+#[derive(Debug, Clone, Default)]
+pub struct DisplayConfig {
+    pub width: usize,
+    pub height: usize,
 }
 
 pub struct Frame {

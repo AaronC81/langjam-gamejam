@@ -15,6 +15,7 @@ pub enum Object {
     Array(Vec<Object>),
 
     InputSingleton,
+    DisplaySingleton,
 }
 
 impl Object {
@@ -99,6 +100,20 @@ impl Object {
                 }
             }
 
+            Object::DisplaySingleton => {
+                // All `Display` functions take no parameters
+                if arguments.len() != 0 {
+                    Self::incorrect_arity(name, 0, arguments.len())?;
+                }
+
+                match name {
+                    "width" => Ok(Object::Number(interpreter.display_config.width as f64)),
+                    "height" => Ok(Object::Number(interpreter.display_config.height as f64)),
+
+                    _ => Err(RuntimeError::new(format!("`Display` has no function named `{}`", name))),
+                }
+            }
+
             _ => Err(RuntimeError::new(format!("cannot call function `{name}` on an object that doesn't have functions"))),
         }
     }
@@ -137,6 +152,7 @@ impl Object {
             },
             
             Object::InputSingleton => "Input".to_owned(),
+            Object::DisplaySingleton => "Display".to_owned(),
         }
     }
 }
