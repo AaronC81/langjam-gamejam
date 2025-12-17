@@ -1,0 +1,25 @@
+entity ShipBullet {
+    var @x, @y;
+
+    constructor {
+        @x = 1;
+        @y = 1;
+    }
+
+    tick {
+        @x = @x + 1;
+
+        if (@x > Display.width()) {
+            destroy this;
+        }
+    }
+
+    func move_to(x, y) {
+        @x = x;
+        @y = y;
+    }
+
+    draw {
+        return sprite { # };
+    }
+}

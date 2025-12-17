@@ -1,0 +1,61 @@
+entity Ship {
+    var @x, @y, @move_cooldown, @fire_cooldown;
+
+    constructor {
+        @x = 2;
+        @y = 2;
+        @move_cooldown = 0;
+
+        @fire_cooldown = 0;
+    }
+
+    tick {
+        this.tick_movement();
+        this.tick_fire();
+    }
+
+    func tick_movement() {
+        if (@move_cooldown > 0) {
+            @move_cooldown = @move_cooldown - 1;
+        }
+
+        if (Input.down_pressed()) {
+            if (@move_cooldown == 0) {
+                @y = @y + 1;
+                @move_cooldown = 3;
+            }
+        }
+
+        if (Input.up_pressed()) {
+            if (@move_cooldown == 0) {
+                @y = @y - 1;
+                @move_cooldown = 3;
+            }
+        }
+    }
+
+    func tick_fire() {
+        if (@fire_cooldown > 0) {
+            @fire_cooldown = @fire_cooldown - 1;
+        }
+
+        if (Input.z_pressed()) {
+            if (@fire_cooldown == 0) {
+                bullet = spawn ShipBullet;
+                bullet.move_to(@x + 4, @y + 2);
+
+                @fire_cooldown = 5;
+            }
+        }
+    }
+
+    draw {
+        return sprite {
+            ##..
+            .##.
+            .###
+            .##.
+            ##..
+        };
+    }
+}
