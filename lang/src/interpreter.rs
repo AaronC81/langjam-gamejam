@@ -1,4 +1,4 @@
-use std::{collections::HashMap, error::Error, fmt::Display, ops::ControlFlow, rc::Rc};
+use std::{collections::{HashMap, HashSet}, error::Error, fmt::Display, ops::ControlFlow, rc::Rc};
 
 use crate::{BinaryOperator, Declaration, Expression, Object, Sprite, Statement};
 
@@ -7,6 +7,10 @@ pub struct Interpreter {
 
     pub(crate) entities: HashMap<EntityId, Entity>,
     next_entity_id: usize,
+    
+    /// Entity destruction is delayed until a tick has finished, otherwise you encounter errors due
+    /// to all of your instance variables disappearing underneath you!
+    entities_pending_destroy: HashSet<EntityId>,
 
     entity_kinds: HashMap<String, Rc<EntityKind>>,
 
@@ -22,6 +26,7 @@ impl Interpreter {
             top_level_constructor: vec![],
             entities: HashMap::new(),
             next_entity_id: 1,
+            entities_pending_destroy: HashSet::new(),
             entity_kinds: HashMap::new(),
             input_report: Default::default(),
             display_config: Default::default(),
@@ -55,6 +60,8 @@ impl Interpreter {
     }
 
     pub fn execute_tick(&mut self) -> InterpreterResult {
+        self.entities_pending_destroy.clear();
+
         let ids_and_kinds = self.entities.iter()
             .map(|(id, entity)| (*id, entity.kind.clone()))
             .collect::<Vec<_>>();
@@ -66,8 +73,12 @@ impl Interpreter {
                     locals: HashMap::new(),
                 };
 
-                self.execute_statement_body(tick, &mut frame)?;
+                let _ = self.execute_statement_body(tick, &mut frame)?;
             }
+        }
+
+        for destroyed_entity in &self.entities_pending_destroy {
+            self.entities.remove(&destroyed_entity);
         }
 
         Ok(())
@@ -430,7 +441,7 @@ impl Interpreter {
                     return Err(RuntimeError::new(format!("used `destroy` on non-entity object: {}", target.describe(self))));
                 };
 
-                self.entities.remove(&entity_id);
+                self.entities_pending_destroy.insert(entity_id);
 
                 Ok(Value::ReadOnly(Object::Null))
             }
