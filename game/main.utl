@@ -21,6 +21,10 @@ entity Smile {
     }
 
     tick {
+        this.tick_movement();
+    }
+
+    func tick_movement() {
         if (@move_cooldown > 0) {
             @move_cooldown = @move_cooldown - 1;
         }
