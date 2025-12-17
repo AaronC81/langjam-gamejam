@@ -66,10 +66,12 @@ pub enum Expression {
         operator: BinaryOperator,
     },
 
-    AddEntity {
+    SpawnEntity {
         // TODO: constructor parameters probably necessary later
         name: String,
     },
+
+    DestroyEntity(Box<Expression>),
 
     Echo(Box<Expression>),
 }

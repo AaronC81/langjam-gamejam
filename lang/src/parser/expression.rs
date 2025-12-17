@@ -74,7 +74,14 @@ fn echo_expression(input: &str) -> IResult<&str, Expression> {
 fn spawn_expression(input: &str) -> IResult<&str, Expression> {
     map(
         (tag("spawn"), ws1, identifier),
-        |(_, _, name)| Expression::AddEntity { name },
+        |(_, _, name)| Expression::SpawnEntity { name },
+    ).parse(input)
+}
+
+fn destroy_expression(input: &str) -> IResult<&str, Expression> {
+    map(
+        (tag("destroy"), ws1, expression),
+        |(_, _, expr)| Expression::DestroyEntity(Box::new(expr)),
     ).parse(input)
 }
 
@@ -143,6 +150,7 @@ fn prefix_expression(input: &str) -> IResult<&str, Expression> {
     alt((
         echo_expression,
         spawn_expression,
+        destroy_expression,
         call_expression,
     )).parse(input)
 }

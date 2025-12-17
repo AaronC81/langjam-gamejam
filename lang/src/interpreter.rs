@@ -389,7 +389,7 @@ impl Interpreter {
                 ))
             }
 
-            Expression::AddEntity { name } => {
+            Expression::SpawnEntity { name } => {
                 let Some(entity_kind) = self.entity_kinds.get(name).cloned() else {
                     return Err(RuntimeError::new(format!("no entity declaration named `{name}`")))
                 };
@@ -418,6 +418,17 @@ impl Interpreter {
                 }
 
                 Ok(Value::ReadOnly(Object::Entity(entity_id)))
+            }
+
+            Expression::DestroyEntity(target) => {
+                let target = self.interpret_expression(target, frame)?.read()?;
+                let Object::Entity(entity_id) = target else {
+                    return Err(RuntimeError::new(format!("used `destroy` on non-entity object: {}", target.describe(self))));
+                };
+
+                self.entities.remove(&entity_id);
+
+                Ok(Value::ReadOnly(Object::Null))
             }
 
             Expression::Echo(target) => {
