@@ -1,6 +1,6 @@
 {
     "highlight.regexes": {
-        "\\b(entity|constructor|func|tick|draw|var|constructor|return)\\b": {
+        "\\b(entity|constructor|func|tick|draw|var|constructor|return|true|false)\\b": {
             "decorations": [
                 {
                     "color": "cornflowerblue"
