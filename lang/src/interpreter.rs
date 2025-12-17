@@ -271,8 +271,12 @@ impl Interpreter {
                 Ok(ControlFlow::Continue(()))
             }
             Statement::Return(expr) => {
-                let retval = self.interpret_expression(expr, frame)?.read()?;
-                Ok(ControlFlow::Break(retval))
+                if let Some(expr) = expr {
+                    let retval = self.interpret_expression(expr, frame)?.read()?;
+                    Ok(ControlFlow::Break(retval))
+                } else {
+                    Ok(ControlFlow::Break(Object::Null))
+                }
             }
         }
     }

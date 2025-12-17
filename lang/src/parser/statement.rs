@@ -50,7 +50,8 @@ pub fn statement(input: &str) -> IResult<&str, Statement> {
     alt((
         if_statement,
         each_loop,
-        map((tag("return"), ws1, expression, ws0, tag(";")), |(_, _, e, _, _)| Statement::Return(e)),
+        map((tag("return"), ws1, expression, ws0, tag(";")), |(_, _, e, _, _)| Statement::Return(Some(e))),
+        map((tag("return"), ws0, tag(";")), |_| Statement::Return(None)),
         map(
             (expression, ws0, tag("="), ws0, expression, ws0, tag(";")),
             |(target, _, _, _, value, _, _)| Statement::Assignment { target, value },

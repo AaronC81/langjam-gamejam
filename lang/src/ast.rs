@@ -40,7 +40,7 @@ pub enum Statement {
         target: Expression,
         value: Expression,
     },
-    Return(Expression),
+    Return(Option<Expression>),
 }
 
 #[derive(Debug, Clone)]
