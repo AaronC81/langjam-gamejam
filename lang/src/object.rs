@@ -144,7 +144,7 @@ impl Object {
                             return Err(RuntimeError::new("arguments to `Math.random_int` must be numbers"));
                         };
 
-                        let value = rand::random_range((start.round() as i64)..(end.round() as i64)) as f64;
+                        let value = rand::random_range((start.round() as i64)..=(end.round() as i64)) as f64;
                         Ok(Object::Number(value))
                     },
 
