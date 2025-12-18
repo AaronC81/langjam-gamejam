@@ -30,6 +30,8 @@ fn main() {
     for dir in GAME_FILES.dirs() {
         files.extend(dir.files());
     }
+    files.sort_by_key(|f| f.path().file_name().unwrap().to_ascii_lowercase());
+    println!("{files:?}");
 
     let mut declarations = vec![];
     for file in files {

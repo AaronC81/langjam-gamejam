@@ -37,6 +37,7 @@ pub fn declaration(input: &str) -> IResult<&str, Declaration> {
         map((tag("constructor"), ws0, statement_body), |(_, _, body)| Declaration::ConstructorDeclaration { body }),
         map((tag("tick"), ws0, statement_body), |(_, _, body)| Declaration::TickDeclaration { body }),
         map((tag("draw"), ws0, statement_body), |(_, _, body)| Declaration::DrawDeclaration { body }),
+        map((tag("use"), ws1, identifier, ws0, char(';')), |(_, _, name, _, _)| Declaration::UseDeclaration { name }),
         instance_var_declaration,
         function_declaration,
     )).parse(input)

@@ -237,6 +237,35 @@ impl Interpreter {
                 target.functions.insert(name.to_owned(), decl);
                 Ok(())
             }
+
+            Declaration::UseDeclaration { name } => {
+                let Some(target) = target else {
+                    return Err(RuntimeError::new("use declarations cannot appear outside of an entity"));
+                };
+                let Some(source_entity_kind) = self.entity_kinds.get(name) else {
+                    return Err(RuntimeError::new(format!("no entity declaration named `{name}`")));
+                };
+
+                // Copy the contents of that entity declaration into this one
+                let EntityKind { name: _, functions, constructor, tick_handler, draw_handler, ivars } = &**source_entity_kind;
+
+                target.functions.extend(functions.clone());
+                target.ivars.extend(ivars.clone());
+
+                if let Some(target_constructor) = target.constructor.as_mut() && let Some(source_constructor) = constructor.as_ref() {
+                    target_constructor.extend_from_slice(&source_constructor);
+                }
+                if let Some(target_tick) = target.tick_handler.as_mut() && let Some(source_tick) = tick_handler.as_ref() {
+                    target_tick.extend_from_slice(&source_tick);
+                }
+
+                // Extending the `draw` handler doesn't make much sense, because it is designed to return something, so only one will ever run. Don't do that
+                if target.draw_handler.is_some() && draw_handler.is_some() {
+                    return Err(RuntimeError::new(format!("both used entity and target entity define `draw`, but that is not possible to merge")));
+                }
+
+                Ok(())
+            }
         }
     }
 

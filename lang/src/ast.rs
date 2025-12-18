@@ -21,6 +21,9 @@ pub enum Declaration {
         parameters: Vec<String>,
         body: Vec<Statement>,
     },
+    UseDeclaration {
+        name: String,
+    }
 }
 
 #[derive(Debug, Clone)]
