@@ -1,8 +1,12 @@
 use std::process::exit;
 
 use include_dir::{Dir, include_dir};
-use langjam_gamejam_lang::{BinaryOperator, Declaration, DisplayConfig, Expression, InputReport, Interpreter, Pixel, Statement, parse};
+use langjam_gamejam_lang::{BinaryOperator, Declaration, DisplayConfig, Expression, InputReport, Interpreter, Pixel, Statement, Tone, parse};
 use raylib::prelude::*;
+
+use crate::tone_player::TonePlayer;
+
+mod tone_player;
 
 const PIXEL_SIZE: i32 = 10;
 
@@ -17,6 +21,9 @@ fn main() {
         .title("Hello, World")
         .build();
     rl.set_target_fps(60);
+
+    let raylib_audio = RaylibAudio::init_audio_device().unwrap();
+    let mut tone_player = TonePlayer::new(&raylib_audio);
 
     let mut declarations = vec![];
     for file in GAME_FILES.files() {
@@ -38,6 +45,7 @@ fn main() {
 
     interpreter.execute_init().unwrap();
     while !rl.window_should_close() {
+
         interpreter.update_input_report(InputReport {
             up: rl.is_key_down(KeyboardKey::KEY_UP),
             down: rl.is_key_down(KeyboardKey::KEY_DOWN),
@@ -47,7 +55,13 @@ fn main() {
             x: rl.is_key_down(KeyboardKey::KEY_X),
             z: rl.is_key_down(KeyboardKey::KEY_Z),
         });
-        interpreter.execute_tick().unwrap();
+
+        let sounds = interpreter.execute_tick().unwrap();
+        for sound in sounds {
+            println!("Playing: {sound:?}");
+            let Tone { note, duration } = sound;
+            tone_player.play_sound(note, (duration * 1000.0) as usize);
+        }
 
         let fps = rl.get_fps();
 

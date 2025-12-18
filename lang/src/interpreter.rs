@@ -1,6 +1,6 @@
 use std::{collections::{HashMap, HashSet}, error::Error, fmt::Display, ops::ControlFlow, rc::Rc};
 
-use crate::{BinaryOperator, Declaration, Expression, Object, Sprite, Statement};
+use crate::{BinaryOperator, Declaration, Expression, Object, Sprite, Statement, Tone};
 
 pub struct Interpreter {
     top_level_constructor: Vec<Statement>,
@@ -11,6 +11,9 @@ pub struct Interpreter {
     /// Entity destruction is delayed until a tick has finished, otherwise you encounter errors due
     /// to all of your instance variables disappearing underneath you!
     entities_pending_destroy: HashSet<EntityId>,
+
+    /// Sounds that have been enqueued for play during this tick
+    pub(crate) pending_sounds: Vec<Tone>,
 
     entity_kinds: HashMap<String, Rc<EntityKind>>,
 
@@ -27,6 +30,7 @@ impl Interpreter {
             entities: HashMap::new(),
             next_entity_id: 1,
             entities_pending_destroy: HashSet::new(),
+            pending_sounds: vec![],
             entity_kinds: HashMap::new(),
             input_report: Default::default(),
             display_config: Default::default(),
@@ -48,6 +52,8 @@ impl Interpreter {
         };
 
         let _ = self.execute_statement_body(&self.top_level_constructor.clone(), &mut frame)?;
+        
+        self.forbid_sound()?;
         Ok(())
     }
 
@@ -59,7 +65,7 @@ impl Interpreter {
         self.display_config = config;
     }
 
-    pub fn execute_tick(&mut self) -> InterpreterResult {
+    pub fn execute_tick(&mut self) -> InterpreterResult<Vec<Tone>> {
         self.entities_pending_destroy.clear();
 
         let ids_and_kinds = self.entities.iter()
@@ -81,7 +87,9 @@ impl Interpreter {
             self.entities.remove(&destroyed_entity);
         }
 
-        Ok(())
+        let sounds = self.pending_sounds.clone();
+        self.pending_sounds.clear();
+        Ok(sounds)
     }
 
     pub fn execute_draw(&mut self) -> InterpreterResult<Vec<DrawOperation>> {
@@ -110,6 +118,7 @@ impl Interpreter {
             }
         }
 
+        self.forbid_sound()?;
         Ok(draw_ops)
     }
 
@@ -366,6 +375,7 @@ impl Interpreter {
             }
 
             Expression::SpriteLiteral(sprite) => Ok(Value::ReadOnly(Object::Sprite(sprite.clone()))),
+            Expression::SoundLiteral(tone) => Ok(Value::ReadOnly(Object::Sound(tone.clone()))),
 
             Expression::FunctionCall { target, name, arguments } => {
                 let target = self.interpret_expression(&target, frame)?.read()?;
@@ -452,6 +462,14 @@ impl Interpreter {
                 Ok(Value::ReadOnly(target))
             }
         }
+    }
+
+    fn forbid_sound(&self) -> InterpreterResult {
+        if !self.pending_sounds.is_empty() {
+            return Err(RuntimeError::new("cannot play sound from anywhere other than `tick` (or a function it calls)"))
+        }
+
+        Ok(())
     }
 }
 

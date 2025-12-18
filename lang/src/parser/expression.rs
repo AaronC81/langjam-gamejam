@@ -1,6 +1,6 @@
 use nom::{IResult, Parser, branch::alt, bytes::complete::{tag, take_while1}, character::complete::char, combinator::map, error::make_error, multi::{many0, many1, separated_list0}, number::complete::double};
 
-use crate::{BinaryOperator, Expression, Pixel, Sprite, parser::{identifier, instance_var_identifier, ws0, ws1}};
+use crate::{BinaryOperator, Expression, Note, Pixel, Sprite, Tone, parser::{identifier, instance_var_identifier, ws0, ws1}};
 
 fn number(input: &str) -> IResult<&str, f64> {
     double(input)
@@ -64,6 +64,33 @@ fn sprite_expression(input: &str) -> IResult<&str, Expression> {
     ).parse(input)
 }
 
+fn sound_expression(input: &str) -> IResult<&str, Expression> {
+    fn note(input: &str) -> IResult<&str, Note> {
+        alt((
+            map(char('A'), |_| Note::A),
+            map(char('B'), |_| Note::B),
+            map(char('C'), |_| Note::C),
+            map(char('D'), |_| Note::D),
+            map(char('E'), |_| Note::E),
+            map(char('F'), |_| Note::F),
+            map(char('G'), |_| Note::G),
+        )).parse(input)
+    }
+
+    fn tone(input: &str) -> IResult<&str, (f64, Note)> {
+        map(
+            (number, ws0, char(':'), ws0, note),
+            |(duration, _, _, _, note)| (duration, note)
+        ).parse(input)
+    }
+
+    // TODO: currently only allows a single tone
+    map(
+        (tag("sound"), ws0, tag("{"), ws0, tone, ws0, tag("}")),
+        |(_, _, _, _, (duration, note), _, _)| Expression::SoundLiteral(Tone { duration, note })
+    ).parse(input)
+}
+
 fn echo_expression(input: &str) -> IResult<&str, Expression> {
     map(
         (tag("echo"), ws1, expression),
@@ -106,6 +133,7 @@ fn atom_expression(input: &str) -> IResult<&str, Expression> {
         map(tag("false"), |_| Expression::BooleanLiteral(false)),
 
         sprite_expression,
+        sound_expression,
         array_expression,
 
         map(identifier, |id| Expression::Identifier(id)),

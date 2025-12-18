@@ -1,6 +1,6 @@
 use std::{ops::ControlFlow, rc::Rc};
 
-use crate::{EntityId, EntityKind, Frame, FunctionDeclaration, Interpreter, InterpreterResult, RuntimeError, Sprite};
+use crate::{EntityId, EntityKind, Frame, FunctionDeclaration, Interpreter, InterpreterResult, RuntimeError, Sprite, Tone};
 
 
 /// Some generic object which can be passed around the interpreter.
@@ -12,6 +12,7 @@ pub enum Object {
     Entity(EntityId),
     EntityKind(Rc<EntityKind>),
     Sprite(Sprite),
+    Sound(Tone),
     Array(Vec<Object>),
 
     InputSingleton,
@@ -82,6 +83,22 @@ impl Object {
                 }
             }
 
+            Object::Sound(sound) => {
+                // All `Sound` functions take no parameters
+                if arguments.len() != 0 {
+                    Self::incorrect_arity(name, 0, arguments.len())?;
+                }
+
+                match name {
+                    "play" => {
+                        interpreter.pending_sounds.push(sound.clone());
+                        Ok(Object::Null)
+                    }
+
+                    _ => Err(RuntimeError::new(format!("sound has no function named `{}`", name))),
+                }
+            }
+
             Object::InputSingleton => {
                 // All `Input` functions take no parameters
                 if arguments.len() != 0 {
@@ -143,6 +160,8 @@ impl Object {
             },
             Object::Sprite(sprite) =>
                 format!("sprite ({}x{})", sprite.width, sprite.height),
+            Object::Sound(tone) =>
+                format!("sound: {tone:?}"),
             Object::Array(items) => {
                 if items.is_empty() {
                     "[ ]".to_string()

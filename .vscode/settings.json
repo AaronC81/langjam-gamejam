@@ -9,7 +9,7 @@
             "filterFileRegex": ".*\\.utl",
             "regexFlags": "g"
         },
-        "\\b(spawn|destroy|sprite|each|in|if|this)\\b": {
+        "\\b(spawn|destroy|sprite|sound|each|in|if|this)\\b": {
             "decorations": [
                 {
                     "color": "salmon"

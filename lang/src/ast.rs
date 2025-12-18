@@ -54,6 +54,7 @@ pub enum Expression {
     InstanceVarIdentifier(String), // @var
 
     SpriteLiteral(Sprite),
+    SoundLiteral(Tone),
 
     FunctionCall {
         target: Box<Expression>,
@@ -109,4 +110,29 @@ pub struct Sprite {
 pub enum Pixel {
     Clear,
     Set,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Note {
+    A, B, C, D, E, F, G
+}
+
+impl Note {
+    pub fn frequency(self) -> f64 {
+        match self {
+            Note::A => 440.0,
+            Note::B => 493.88,
+            Note::C => 261.63,
+            Note::D => 293.66,
+            Note::E => 329.63,
+            Note::F => 349.23,
+            Note::G => 392.0,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Tone {
+    pub note: Note,
+    pub duration: f64,
 }
