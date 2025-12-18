@@ -139,6 +139,8 @@ fn atom_expression(input: &str) -> IResult<&str, Expression> {
         map(identifier, |id| Expression::Identifier(id)),
         map(instance_var_identifier, |id| Expression::InstanceVarIdentifier(id)),
         map(number, |n| Expression::NumberLiteral(n)),
+
+        map((char('('), ws0, expression, ws0, char(')')), |(_, _, e, _, _)| e),
     )).parse(input)
 }
 
