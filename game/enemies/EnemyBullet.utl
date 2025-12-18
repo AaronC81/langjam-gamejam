@@ -1,0 +1,31 @@
+entity EnemyBullet {
+    var @x, @y;
+
+    tick {
+        @x = @x - 0.3;
+
+        if (@x < 0) {
+            destroy this;
+        }
+    }
+
+    func move_to(x, y) {
+        @x = x;
+        @y = y;
+    }
+
+    func has_hit(x, y, w, h) {
+        /* No boolean operators yet, so this will do! */
+        /* TODO: check this calculation isn't off-by-one */
+        if (@x < x) { return false; }
+        if (@y < y) { return false; }
+        if (@x > x + w) { return false; }
+        if (@y > y + h) { return false; }
+
+        return true;
+    }
+
+    draw {
+        return sprite { # };
+    }
+}

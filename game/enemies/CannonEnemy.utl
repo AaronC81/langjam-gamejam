@@ -1,0 +1,57 @@
+entity CannonEnemy {
+    var @x, @y, @x_velocity, @fire_cooldown;
+
+    constructor {
+        @x = Display.width() + 1;
+        @y = 10;
+
+        @x_velocity = -0.05;
+        @fire_cooldown = 120;
+    }
+
+    tick {
+        this.tick_movement();
+        this.tick_hit();
+        this.tick_fire();
+    }
+
+    func tick_movement() {
+        @x = @x + @x_velocity;
+
+        if (@x < -3) {
+            destroy this;
+        }
+    }
+
+    func tick_hit() {
+        each bullet in (ShipBullet.all()) {
+            if (bullet.has_hit(@x, @y, 3, 3)) {
+                destroy this;
+                destroy bullet;
+
+                (sound { 0.1: A }).play();
+            }
+        }
+    }
+
+    func tick_fire() {
+        if (@fire_cooldown > 0) {
+            @fire_cooldown = @fire_cooldown - 1;
+        }
+
+        if (@fire_cooldown == 0) {
+            bullet = spawn EnemyBullet;
+            bullet.move_to(@x, @y + 1);
+
+            @fire_cooldown = 120;
+        }
+    }
+
+    draw {
+        return sprite {
+            .##
+            ###
+            .##
+        };
+    }
+}

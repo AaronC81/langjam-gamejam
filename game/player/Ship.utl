@@ -12,6 +12,7 @@ entity Ship {
     tick {
         this.tick_movement();
         this.tick_fire();
+        this.tick_hit();
     }
 
     func tick_movement() {
@@ -47,6 +48,17 @@ entity Ship {
                 @fire_cooldown = 5;
                 
                 (sound { 0.025: F }).play();
+            }
+        }
+    }
+
+    func tick_hit() {
+        /* TODO: Track health, better audio/sound */
+        each bullet in (EnemyBullet.all()) {
+            if (bullet.has_hit(@x, @y, 4, 5)) {
+                destroy bullet;
+
+                (sound { 0.3: G }).play();
             }
         }
     }
