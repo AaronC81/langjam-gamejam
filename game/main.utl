@@ -1,6 +1,4 @@
 constructor {
     spawn Ship;
-
-    (spawn WobblerEnemy).randomise_y(3);
-    (spawn CannonEnemy).randomise_y(3);
+    spawn EnemySpawner;
 }

@@ -1,0 +1,24 @@
+entity EnemySpawner {
+    /* TODO: scaling difficulty, "points"-based mass-spawning, etc */
+
+    var @spawn_timer;
+
+    constructor {
+        @spawn_timer = spawn Timer;
+        @spawn_timer.start(120); /* Give the player a moment! */
+    }
+
+    tick {
+        if (@spawn_timer.elapsed()) {
+            enemy_number = Math.random_int(1, 2);
+            if (enemy_number == 1) {
+                spawn WobblerEnemy;
+            }
+            if (enemy_number == 2) {
+                spawn CannonEnemy;
+            }
+
+            @spawn_timer.start(Math.random_int(45, 120));
+        }
+    }
+}

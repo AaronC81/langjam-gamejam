@@ -5,7 +5,7 @@ entity WobblerEnemy {
 
     constructor {
         @x = Display.width() + 1;
-        @y = 0;
+        this.randomise_y(3);
 
         @x_velocity = -0.1;
         @y_velocity = 0.25;
