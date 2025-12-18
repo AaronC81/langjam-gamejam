@@ -25,8 +25,14 @@ fn main() {
     let raylib_audio = RaylibAudio::init_audio_device().unwrap();
     let mut tone_player = TonePlayer::new(&raylib_audio);
 
+    // One level of dir nesting supported - should be plenty
+    let mut files = GAME_FILES.files().collect::<Vec<_>>();
+    for dir in GAME_FILES.dirs() {
+        files.extend(dir.files());
+    }
+
     let mut declarations = vec![];
-    for file in GAME_FILES.files() {
+    for file in files {
         match parse(file.contents_utf8().unwrap()) {
             Ok(decls) => declarations.extend(decls),
             Err(err) => {
