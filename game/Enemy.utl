@@ -30,6 +30,8 @@ entity Enemy {
             if (bullet.has_hit(@x, @y, 3, 3)) {
                 destroy this;
                 destroy bullet;
+
+                (sound { 0.1: A }).play();
             }
         }
     }

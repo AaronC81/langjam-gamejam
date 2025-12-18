@@ -45,6 +45,8 @@ entity Ship {
                 bullet.move_to(@x + 4, @y + 2);
 
                 @fire_cooldown = 5;
+                
+                (sound { 0.025: F }).play();
             }
         }
     }
