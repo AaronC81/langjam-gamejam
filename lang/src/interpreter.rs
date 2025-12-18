@@ -357,6 +357,7 @@ impl Interpreter {
                 match id.as_ref() {
                     "Input" => return Ok(Value::ReadOnly(Object::InputSingleton)),
                     "Display" => return Ok(Value::ReadOnly(Object::DisplaySingleton)),
+                    "Math" => return Ok(Value::ReadOnly(Object::MathSingleton)),
                     _ => {}, // Carry on
                 }
 

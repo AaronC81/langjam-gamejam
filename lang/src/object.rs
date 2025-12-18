@@ -17,6 +17,7 @@ pub enum Object {
 
     InputSingleton,
     DisplaySingleton,
+    MathSingleton,
 }
 
 impl Object {
@@ -131,6 +132,26 @@ impl Object {
                 }
             }
 
+            Object::MathSingleton => {
+                match name {
+                    // `random_int(start, end)` returns a random integer between `start` and `end`
+                    // (inclusive on both sides)
+                    "random_int" => {
+                        let [start, end] = arguments.as_slice() else {
+                            Self::incorrect_arity(name, 2, arguments.len())?;
+                        };
+                        let (Object::Number(start), Object::Number(end)) = (start, end) else {
+                            return Err(RuntimeError::new("arguments to `Math.random_int` must be numbers"));
+                        };
+
+                        let value = rand::random_range((start.round() as i64)..(end.round() as i64)) as f64;
+                        Ok(Object::Number(value))
+                    },
+
+                    _ => Err(RuntimeError::new(format!("`Math` has no function named `{}`", name))),
+                }
+            }
+
             _ => Err(RuntimeError::new(format!("cannot call function `{name}` on an object that doesn't have functions"))),
         }
     }
@@ -172,6 +193,7 @@ impl Object {
             
             Object::InputSingleton => "Input".to_owned(),
             Object::DisplaySingleton => "Display".to_owned(),
+            Object::MathSingleton => "Math".to_owned(),
         }
     }
 }
