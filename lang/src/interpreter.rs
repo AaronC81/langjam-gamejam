@@ -167,11 +167,12 @@ impl Interpreter {
             Declaration::ConstructorDeclaration { body } => {
                 // Constructors may either apply to the current entity, or the entire program
                 if let Some(target) = target {
-                    if target.constructor.is_some() {
-                        return Err(RuntimeError::new(format!("constructor is already declared")));
+                    if let Some(constructor) = target.constructor.as_mut() {
+                        constructor.extend(body.clone());
+                    } else {
+                        target.constructor = Some(body.clone());
                     }
     
-                    target.constructor = Some(body.clone());
                     Ok(())
                 } else {
                     if !self.top_level_constructor.is_empty() {
@@ -186,11 +187,13 @@ impl Interpreter {
                 let Some(target) = target else {
                     return Err(RuntimeError::new("tick declarations cannot appear outside of an entity"));
                 };
-                if target.tick_handler.is_some() {
-                    return Err(RuntimeError::new(format!("tick handler is already declared")));
+                
+                if let Some(tick) = target.tick_handler.as_mut() {
+                    tick.extend(body.clone());
+                } else {
+                    target.tick_handler = Some(body.clone());
                 }
 
-                target.tick_handler = Some(body.clone());
                 Ok(())
             }
 
@@ -252,11 +255,19 @@ impl Interpreter {
                 target.functions.extend(functions.clone());
                 target.ivars.extend(ivars.clone());
 
-                if let Some(target_constructor) = target.constructor.as_mut() && let Some(source_constructor) = constructor.as_ref() {
-                    target_constructor.extend_from_slice(&source_constructor);
+                if let Some(source_constructor) = constructor.as_ref() {
+                    if let Some(target_constructor) = target.constructor.as_mut() {
+                        target_constructor.extend_from_slice(&source_constructor);
+                    } else {
+                        target.constructor = Some(source_constructor.clone());
+                    }
                 }
-                if let Some(target_tick) = target.tick_handler.as_mut() && let Some(source_tick) = tick_handler.as_ref() {
-                    target_tick.extend_from_slice(&source_tick);
+                if let Some(source_tick) = tick_handler.as_ref() {
+                    if let Some(target_tick) = target.tick_handler.as_mut() {
+                        target_tick.extend_from_slice(&source_tick);
+                    } else {
+                        target.tick_handler = Some(source_tick.clone());
+                    }
                 }
 
                 // Extending the `draw` handler doesn't make much sense, because it is designed to return something, so only one will ever run. Don't do that
