@@ -22,4 +22,8 @@ entity Positional {
 
         return true;
     }
+
+    func randomise_y(h) {
+        this.move_to(@x, Math.random_int(h, Display.height() - h));
+    }
 }
