@@ -1,14 +1,17 @@
 entity Ship {
     use Positional;
 
-    var @move_cooldown, @fire_cooldown;
+    var @move_timer, @fire_timer;
 
     constructor {
         @x = 2;
         @y = 2;
-        @move_cooldown = 0;
 
-        @fire_cooldown = 0;
+        @move_timer = spawn Timer;
+        @move_timer.configure(3);
+
+        @fire_timer = spawn Timer;
+        @fire_timer.configure(5);
     }
 
     tick {
@@ -18,36 +21,26 @@ entity Ship {
     }
 
     func tick_movement() {
-        if (@move_cooldown > 0) {
-            @move_cooldown = @move_cooldown - 1;
-        }
-
-        if (Input.down_pressed()) {
-            if (@move_cooldown == 0) {
+        if (@move_timer.elapsed()) {
+            if (Input.down_pressed()) {
                 @y = @y + 1;
-                @move_cooldown = 3;
+                @move_timer.restart();
             }
-        }
 
-        if (Input.up_pressed()) {
-            if (@move_cooldown == 0) {
+            if (Input.up_pressed()) {
                 @y = @y - 1;
-                @move_cooldown = 3;
+                @move_timer.restart();
             }
         }
     }
 
     func tick_fire() {
-        if (@fire_cooldown > 0) {
-            @fire_cooldown = @fire_cooldown - 1;
-        }
-
         if (Input.z_pressed()) {
-            if (@fire_cooldown == 0) {
+            if (@fire_timer.elapsed()) {
                 bullet = spawn ShipBullet;
                 bullet.move_to(@x + 4, @y + 2);
 
-                @fire_cooldown = 5;
+                @fire_timer.restart();
                 
                 (sound { 0.025: F }).play();
             }

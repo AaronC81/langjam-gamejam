@@ -1,14 +1,16 @@
 entity CannonEnemy {
     use Positional;
 
-    var @x_velocity, @fire_cooldown;
+    var @x_velocity, @fire_timer;
 
     constructor {
         @x = Display.width() + 1;
         @y = 10;
 
         @x_velocity = -0.05;
-        @fire_cooldown = 120;
+
+        @fire_timer = spawn Timer;
+        @fire_timer.start(120); /* instead of configure, so it doesn't fire immediately on spawn */
     }
 
     tick {
@@ -37,15 +39,11 @@ entity CannonEnemy {
     }
 
     func tick_fire() {
-        if (@fire_cooldown > 0) {
-            @fire_cooldown = @fire_cooldown - 1;
-        }
-
-        if (@fire_cooldown == 0) {
+        if (@fire_timer.elapsed()) {
             bullet = spawn EnemyBullet;
             bullet.move_to(@x, @y + 1);
 
-            @fire_cooldown = 120;
+            @fire_timer.restart();
         }
     }
 

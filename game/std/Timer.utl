@@ -1,0 +1,35 @@
+/* Utility for counting numbers of frames */
+entity Timer {
+    var @count, @last_start;
+
+    constructor {
+        @count = 0;
+    }
+
+    tick {
+        if (@count > 0) {
+            @count = @count - 1;
+        }
+    }
+
+    /* Has the timer finished ticking? */
+    func elapsed() {
+        return (@count <= 0);
+    }
+
+    /* Set the time which `restart` will use, without starting the timer */
+    func configure(count) {
+        @last_start = count;
+    }
+
+    /* Start the timer for a given number of ticks */
+    func start(count) {
+        @last_start = count;
+        @count = count;
+    }
+
+    /* Restart the timer for the last number of ticks */
+    func restart() {
+        @count = @last_start;
+    }
+}
