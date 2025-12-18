@@ -1,5 +1,7 @@
 entity CannonEnemy {
-    var @x, @y, @x_velocity, @fire_cooldown;
+    use Positional;
+
+    var @x_velocity, @fire_cooldown;
 
     constructor {
         @x = Display.width() + 1;

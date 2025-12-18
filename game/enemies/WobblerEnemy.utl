@@ -1,5 +1,7 @@
 entity WobblerEnemy {
-    var @x, @y, @x_velocity, @y_velocity;
+    use Positional;
+
+    var @x_velocity, @y_velocity;
 
     constructor {
         @x = Display.width() + 1;

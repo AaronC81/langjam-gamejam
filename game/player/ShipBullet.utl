@@ -1,5 +1,5 @@
 entity ShipBullet {
-    var @x, @y;
+    use Positional;
 
     constructor {
         @x = 1;
@@ -12,22 +12,6 @@ entity ShipBullet {
         if (@x > Display.width()) {
             destroy this;
         }
-    }
-
-    func move_to(x, y) {
-        @x = x;
-        @y = y;
-    }
-
-    func has_hit(x, y, w, h) {
-        /* No boolean operators yet, so this will do! */
-        /* TODO: check this calculation isn't off-by-one */
-        if (@x < x) { return false; }
-        if (@y < y) { return false; }
-        if (@x > x + w) { return false; }
-        if (@y > y + h) { return false; }
-
-        return true;
     }
 
     draw {

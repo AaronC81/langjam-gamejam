@@ -1,5 +1,7 @@
 entity Ship {
-    var @x, @y, @move_cooldown, @fire_cooldown;
+    use Positional;
+
+    var @move_cooldown, @fire_cooldown;
 
     constructor {
         @x = 2;
