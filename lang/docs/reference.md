@@ -98,6 +98,14 @@ each x in (arr) {
 }
 ```
 
+Or loop over an integer for a count-based loop:
+
+```
+each x in (3) {
+    echo x; /* 0, 1, 2 */
+}
+```
+
 # Entities
 
 ## Programming Model
@@ -298,7 +306,7 @@ This language was pretty much implemented as I needed stuff, so if I didn't need
 
 * Features:
     * No strings
-    * Lacking control flow - no support for `else`, range-based loops, or `while` loops
+    * Lacking control flow - no support for `else`, or `while` loops
     * No line comments
     * Constructor parameters are not supported
     * Small standard library

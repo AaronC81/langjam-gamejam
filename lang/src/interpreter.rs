@@ -314,8 +314,13 @@ impl Interpreter {
             }
             Statement::EachLoop { variable, source, body } => {
                 let source = self.interpret_expression(source, frame)?.read()?;
-                let Object::Array(items) = source else {
-                    return Err(RuntimeError::new("loop source must be an array"));
+                
+                let items = match source {
+                    Object::Array(items) => items,
+                    Object::Number(max) => (0..(max.round() as i64))
+                        .map(|n| Object::Number(n as f64))
+                        .collect(),
+                    _ => return Err(RuntimeError::new("loop source must be an array or integer")),
                 };
 
                 for item in items {
