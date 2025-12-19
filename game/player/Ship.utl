@@ -23,13 +23,17 @@ entity Ship {
     func tick_movement() {
         if (@move_timer.elapsed()) {
             if (Input.down_pressed()) {
-                @y = @y + 1;
-                @move_timer.restart();
+                if (@y < Display.height() - 5) {
+                    @y = @y + 1;
+                    @move_timer.restart();
+                }
             }
 
             if (Input.up_pressed()) {
-                @y = @y - 1;
-                @move_timer.restart();
+                if (@y > 0) {
+                    @y = @y - 1;
+                    @move_timer.restart();
+                }
             }
         }
     }
