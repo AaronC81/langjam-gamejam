@@ -1,4 +1,4 @@
-use std::{collections::{HashMap, HashSet}, error::Error, fmt::Display, ops::ControlFlow, rc::Rc};
+use std::{collections::{HashMap, HashSet}, error::Error, fmt::Display, ops::ControlFlow, rc::Rc, time::Instant};
 
 use crate::{BinaryOperator, Declaration, Expression, Object, Sprite, Statement, Tone};
 
@@ -6,6 +6,7 @@ pub struct Interpreter {
     top_level_constructor: Vec<Statement>,
 
     pub(crate) entities: HashMap<EntityId, Entity>,
+    pub(crate) entities_by_kinds: HashMap<String, HashSet<EntityId>>,
     next_entity_id: usize,
     
     /// Entity destruction is delayed until a tick has finished, otherwise you encounter errors due
@@ -28,6 +29,8 @@ impl Interpreter {
         Self {
             top_level_constructor: vec![],
             entities: HashMap::new(),
+            entities_by_kinds: HashMap::new(),
+
             next_entity_id: 1,
             entities_pending_destroy: HashSet::new(),
             pending_sounds: vec![],
@@ -84,7 +87,9 @@ impl Interpreter {
         }
 
         for destroyed_entity in &self.entities_pending_destroy {
+            let kind = self.entities[destroyed_entity].kind.name.clone();
             self.entities.remove(&destroyed_entity);
+            self.entities_by_kinds.get_mut(&kind).unwrap().remove(destroyed_entity);
         }
 
         let sounds = self.pending_sounds.clone();
@@ -506,6 +511,7 @@ impl Interpreter {
                 self.next_entity_id += 1;
 
                 self.entities.insert(entity_id, new_entity);
+                self.entities_by_kinds.entry(name.clone()).or_default().insert(entity_id);
 
                 // Execute constructor
                 if let Some(constructor) = entity_kind.constructor.as_ref() {

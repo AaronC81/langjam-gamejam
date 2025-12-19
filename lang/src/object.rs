@@ -53,17 +53,14 @@ impl Object {
 
                 match name {
                     "all" => {
-                        let entities_of_kind = interpreter.entities.iter()
-                            .filter_map(|(id, e)|
-                                if e.kind == *kind {
-                                    Some(Object::Entity(*id))
-                                } else {
-                                    None
-                                }
-                            )
-                            .collect::<Vec<_>>();
-
-                        Ok(Object::Array(entities_of_kind))
+                        let Some(entities_of_kind) = interpreter.entities_by_kinds.get(&kind.name) else {
+                            return Ok(Object::Array(vec![]))
+                        };
+                        Ok(Object::Array(
+                            entities_of_kind.iter()
+                                .map(|id| Object::Entity(*id))
+                                .collect()
+                        ))
                     },
 
                     _ => Err(RuntimeError::new(format!("`{}` has no function named `{}`", self.describe(interpreter), name))),
