@@ -1,27 +1,35 @@
 entity EnemySpawner {
-    /* TODO: scaling difficulty, "points"-based mass-spawning, etc */
-
     var @spawn_timer;
+    var @tick_count;
 
     constructor {
+        @tick_count = 0;
+
         @spawn_timer = spawn Timer;
         @spawn_timer.start(60); /* Give the player a moment! */
     }
 
     tick {
+        @tick_count = @tick_count + 1;
+
         if (@spawn_timer.elapsed()) {
-            enemy_number = Math.random_int(1, 4);
-            if (enemy_number == 1) {
-                spawn WobblerEnemy;
-            }
-            if (enemy_number == 2) {
-                spawn CannonEnemy;
-            }
-            if (enemy_number == 3) {
-                spawn SprayerEnemy;
-            }
-            if (enemy_number == 4) {
-                spawn ZoomerEnemy;
+            /* As the game progresses, spawn more enemies each time */
+            spawns = Math.round(@tick_count / 200) + 1;
+            
+            each _ in (spawns) {
+                enemy_number = Math.random_int(1, 4);
+                if (enemy_number == 1) {
+                    spawn WobblerEnemy;
+                }
+                if (enemy_number == 2) {
+                    spawn CannonEnemy;
+                }
+                if (enemy_number == 3) {
+                    spawn SprayerEnemy;
+                }
+                if (enemy_number == 4) {
+                    spawn ZoomerEnemy;
+                }
             }
 
             @spawn_timer.start(Math.random_int(25, 60));

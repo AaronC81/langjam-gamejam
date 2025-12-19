@@ -12,7 +12,7 @@ entity SprayerEnemy {
         @x_velocity = -0.08;
 
         @fire_timer = spawn Timer;
-        @fire_timer.start(120); /* instead of configure, so it doesn't fire immediately on spawn */
+        @fire_timer.configure(120);
     }
 
     tick {

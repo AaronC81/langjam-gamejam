@@ -11,7 +11,7 @@ entity Ship {
         @move_timer.configure(1);
 
         @fire_timer = spawn Timer;
-        @fire_timer.start(3); /* Don't fire off the "Z" press to start the game */
+        @fire_timer.start(5); /* Don't fire off the "Z" press to start the game */
     }
 
     tick {
