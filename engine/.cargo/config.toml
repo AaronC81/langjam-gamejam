@@ -1,0 +1,14 @@
+[target.wasm32-unknown-emscripten]
+# Claude special for these options! Was encountering allocation issues before.
+rustflags = [
+    "-C", "link-arg=-sWASM=1",
+    "-C", "link-arg=-sUSE_GLFW=3",
+    "-C", "link-arg=-sALLOW_MEMORY_GROWTH=1",
+    "-C", "link-arg=-sINITIAL_MEMORY=67108864",  # 64MB initial memory
+    "-C", "link-arg=-sSTACK_SIZE=5242880",       # 5MB stack
+    "-C", "link-arg=-sASYNCIFY",
+    "-C", "link-arg=-sASYNCIFY_STACK_SIZE=24576",
+    "-C", "link-arg=-sTOTAL_STACK=5242880",
+    "-C", "link-arg=-sMAXIMUM_MEMORY=2147483648", # 2GB max
+    "-C", "link-arg=-O2",
+]

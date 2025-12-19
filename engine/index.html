@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPACE BLASTER</title>
+    <style>
+        body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background-color: black;
+
+            height: 100vh;
+        }
+
+        main {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+
+            height: 100vh;
+        }
+
+        canvas {
+            border: 1px solid #333;
+            background-color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <canvas id="canvas"></canvas>
+    </main>
+
+    <script>
+        var Module = {
+            canvas: document.getElementById('canvas'),
+            onRuntimeInitialized: () => {
+                document.getElementById('canvas').style.display = 'block';
+            },
+            printErr: (text) => console.error(text),
+            print: (text) => console.log(text),
+        };
+    </script>
+    <script src="langjam-gamejam-engine.js"></script>
+</body>
+</html>

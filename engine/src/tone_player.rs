@@ -7,19 +7,15 @@ use std::{collections::HashMap, f64::consts::PI, ffi::c_void};
 use langjam_gamejam_lang::Note;
 use raylib::{audio::RaylibAudio, ffi};
 
-pub struct TonePlayer<'a> {
-    // Not actually used due to unsafe schenanigans, but proves you've at least initialised audio
-    raylib_audio: &'a RaylibAudio,
-
+pub struct TonePlayer {
     sounds: HashMap<(Note, usize), ffi::Sound>,
 }
 
 const SAMPLE_RATE: u32 = 44100;
 
-impl<'a> TonePlayer<'a> {
-    pub fn new(raylib_audio: &'a RaylibAudio) -> Self {
+impl TonePlayer {
+    pub fn new() -> Self {
         Self {
-            raylib_audio,
             sounds: HashMap::new(),
         }
     }

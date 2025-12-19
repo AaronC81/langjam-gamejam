@@ -22,8 +22,8 @@ fn main() {
         .build();
     rl.set_target_fps(60);
 
-    let raylib_audio = RaylibAudio::init_audio_device().unwrap();
-    let mut tone_player = TonePlayer::new(&raylib_audio);
+    let mut audio_initialised = false;
+    let mut tone_player = TonePlayer::new();
 
     // One level of dir nesting supported - should be plenty
     let mut files = GAME_FILES.files().collect::<Vec<_>>();
@@ -53,7 +53,6 @@ fn main() {
 
     interpreter.execute_init().unwrap();
     while !rl.window_should_close() {
-
         interpreter.update_input_report(InputReport {
             up: rl.is_key_down(KeyboardKey::KEY_UP),
             down: rl.is_key_down(KeyboardKey::KEY_DOWN),
@@ -64,9 +63,19 @@ fn main() {
             z: rl.is_key_down(KeyboardKey::KEY_Z),
         });
 
+        // Because of The Web (TM), we're only allowed to initialise audio once there's been a user
+        // interaction.
+        // Wait for "Z" to be pressed to start the game, and initialise audio then.
+        if !audio_initialised && rl.is_key_down(KeyboardKey::KEY_Z) {
+            // Audio gets deinitialised on `RaylibAudio` drop.
+            // Leak the audio device so it stays initialised forever.
+            // We don't need a handle because we do our audio through FFI.
+            Box::leak(Box::new(RaylibAudio::init_audio_device().unwrap()));
+            audio_initialised = true;
+        }
+
         let sounds = interpreter.execute_tick().unwrap();
         for sound in sounds {
-            println!("Playing: {sound:?}");
             let Tone { note, duration } = sound;
             tone_player.play_sound(note, (duration * 1000.0) as usize);
         }
