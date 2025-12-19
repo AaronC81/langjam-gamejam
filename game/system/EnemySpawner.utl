@@ -21,4 +21,10 @@ entity EnemySpawner {
             @spawn_timer.start(Math.random_int(45, 120));
         }
     }
+
+    func destroy_enemies() {
+        each x in (CannonEnemy.all()) { destroy x; }
+        each x in (WobblerEnemy.all()) { destroy x; }
+        each x in (EnemyBullet.all()) { destroy x; }
+    }
 }

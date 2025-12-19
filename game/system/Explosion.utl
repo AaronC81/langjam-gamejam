@@ -1,0 +1,85 @@
+entity Explosion {
+    use Positional;
+
+    var @ticks;
+
+    constructor {
+        @ticks = 0;
+    }
+
+    tick {
+        if (@ticks == 0) {
+            (sound { 0.2: G }).play();
+        }
+        if (@ticks == 20) {
+            (sound { 0.2: F }).play();
+        }
+        if (@ticks == 40) {
+            (sound { 0.2: E }).play();
+        }
+        if (@ticks == 60) {
+            (sound { 0.5: D }).play();
+        }
+
+        @ticks = @ticks + 1;
+
+        if (@ticks == 120) {
+            destroy this;
+
+            /* TODO: Orchestrator should do this so it can actually start the game again */
+            each spawner in (EnemySpawner.all()) {
+                spawner.destroy_enemies();
+                destroy spawner;
+            }
+
+            spawn GameOverScreen;
+        }
+    }
+
+    draw {
+        if (@ticks < 20) {
+            return sprite {
+                .....
+                .....
+                ..#..
+                .....
+                .....
+            };
+        }
+        if (@ticks < 40) {
+            return sprite {
+                .....
+                ..#..
+                .#.#.
+                ..#..
+                .....
+            };
+        }
+        if (@ticks < 60) {
+            return sprite {
+                .....
+                .#.#.
+                .....
+                .#.#.
+                .....
+            };
+        }
+        if (@ticks < 80) {
+            return sprite {
+                ..#..
+                .#.#.
+                #.#.#
+                .#.#.
+                ..#..
+            };
+        }
+
+        return sprite {
+            #...#
+            .#.#.
+            ..#..
+            .#.#.
+            #...#
+        };
+    }
+}

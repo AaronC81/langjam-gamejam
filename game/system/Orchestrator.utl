@@ -1,0 +1,4 @@
+/* Tracks high-level game state */
+entity Orchestrator {
+    var @todo;
+}

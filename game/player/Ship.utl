@@ -52,8 +52,9 @@ entity Ship {
         each bullet in (EnemyBullet.all()) {
             if (bullet.has_hit(@x, @y, 4, 5)) {
                 destroy bullet;
+                destroy this;
 
-                (sound { 0.3: G }).play();
+                (spawn Explosion).move_to(bullet.x() - 2, bullet.y() - 2);
             }
         }
     }
