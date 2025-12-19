@@ -20,7 +20,7 @@ fn main() {
         .size(WINDOW_WIDTH, WINDOW_HEIGHT)
         .title("SPACE BLASTER")
         .build();
-    rl.set_target_fps(60);
+    rl.set_target_fps(30);
 
     let mut audio_initialised = false;
     let mut tone_player = TonePlayer::new();

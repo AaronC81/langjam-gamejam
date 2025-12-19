@@ -5,7 +5,7 @@ entity EnemySpawner {
 
     constructor {
         @spawn_timer = spawn Timer;
-        @spawn_timer.start(120); /* Give the player a moment! */
+        @spawn_timer.start(60); /* Give the player a moment! */
     }
 
     tick {
@@ -18,7 +18,7 @@ entity EnemySpawner {
                 spawn CannonEnemy;
             }
 
-            @spawn_timer.start(Math.random_int(45, 120));
+            @spawn_timer.start(Math.random_int(25, 60));
         }
     }
 
