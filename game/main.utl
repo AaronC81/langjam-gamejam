@@ -1,4 +1,3 @@
 constructor {
-    spawn Ship;
-    spawn EnemySpawner;
+    spawn TitleScreen;
 }

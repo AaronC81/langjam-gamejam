@@ -1,4 +1,7 @@
-/* Tracks high-level game state */
+/* Bundle of everything needed for gameplay */
 entity Orchestrator {
-    var @todo;
+    constructor {
+        spawn Ship;
+        spawn EnemySpawner;
+    }
 }

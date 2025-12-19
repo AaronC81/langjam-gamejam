@@ -18,7 +18,7 @@ const GAME_FILES: Dir = include_dir!("$CARGO_MANIFEST_DIR/../game");
 fn main() {
     let (mut rl, thread) = raylib::init()
         .size(WINDOW_WIDTH, WINDOW_HEIGHT)
-        .title("Hello, World")
+        .title("SPACE BLASTER")
         .build();
     rl.set_target_fps(60);
 

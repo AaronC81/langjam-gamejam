@@ -5,13 +5,13 @@ entity Ship {
 
     constructor {
         @x = 2;
-        @y = 2;
+        @y = Display.height() / 2 - 4;
 
         @move_timer = spawn Timer;
         @move_timer.configure(3);
 
         @fire_timer = spawn Timer;
-        @fire_timer.configure(5);
+        @fire_timer.start(5); /* Don't fire off the "Z" press to start the game */
     }
 
     tick {
