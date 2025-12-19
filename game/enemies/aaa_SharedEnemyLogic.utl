@@ -1,7 +1,8 @@
 entity TickHit {
     tick {
         each bullet in (ShipBullet.all()) {
-            if (bullet.has_hit(@x, @y, 3, 3)) {
+            /* Round to match how pixels are drawn, in case @x and @y are fractional */
+            if (bullet.has_hit(Math.round(@x), Math.round(@y), 3, 3)) {
                 destroy this;
                 destroy bullet;
 

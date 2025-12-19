@@ -145,6 +145,17 @@ impl Object {
                         Ok(Object::Number(value))
                     },
 
+                    "round" => {
+                        let [value] = arguments.as_slice() else {
+                            Self::incorrect_arity(name, 1, arguments.len())?;
+                        };
+                        let Object::Number(value) = value else {
+                            return Err(RuntimeError::new("arguments to `Math.round` must be a number"));
+                        };
+
+                        Ok(Object::Number(value.round()))
+                    },
+
                     _ => Err(RuntimeError::new(format!("`Math` has no function named `{}`", name))),
                 }
             }

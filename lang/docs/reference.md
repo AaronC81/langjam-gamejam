@@ -290,6 +290,8 @@ The following functions exist to check whether certain keys are being held:
 
 `Math.random_int(start, end)` will return a random integer between `start` and `end`, inclusive on both sides.
 
+`Math.round(x)` will round `x` to the nearest integer.
+
 # Shortcomings
 
 This language was pretty much implemented as I needed stuff, so if I didn't need it, it's not here:
