@@ -56,7 +56,7 @@ impl TonePlayer {
             } else {
                 1.0
             };
-            samples[i] = (sample * envelope * i16::MAX as f64) as i16;
+            samples[i] = (sample * envelope * i16::MAX as f64 * 0.25) as i16;
         }
         
         // `sounds` hash ensures we don't leak any more memory than we need to
