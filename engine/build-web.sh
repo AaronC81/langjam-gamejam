@@ -15,4 +15,8 @@ cp $SCRIPT_DIR/../target/wasm32-unknown-emscripten/debug/langjam-gamejam-engine.
 cp $SCRIPT_DIR/../target/wasm32-unknown-emscripten/debug/langjam_gamejam_engine.wasm $SCRIPT_DIR/web/
 cp $SCRIPT_DIR/index.html $SCRIPT_DIR/web/
 
+# Pack
+if [ -f web/web.zip ]; then rm web/web.zip; fi
+zip web/web.zip web/* 
+
 echo Done!

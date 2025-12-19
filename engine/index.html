@@ -34,6 +34,8 @@
     </main>
 
     <script>
+        addEventListener("keydown", (e) => e.preventDefault());
+
         var Module = {
             canvas: document.getElementById('canvas'),
             onRuntimeInitialized: () => {
