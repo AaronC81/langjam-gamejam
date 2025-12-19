@@ -56,6 +56,7 @@ entity Ship {
         each enemy in (WobblerEnemy.all()) { this.die_if_collision(enemy); }
         each enemy in (CannonEnemy.all()) { this.die_if_collision(enemy); }
         each enemy in (SprayerEnemy.all()) { this.die_if_collision(enemy); }
+        each enemy in (ZoomerEnemy.all()) { this.die_if_collision(enemy); }
     }
 
     func die_if_collision(obj) {

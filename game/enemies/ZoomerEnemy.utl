@@ -1,0 +1,20 @@
+entity ZoomerEnemy {
+    use Positional;
+    use TickHit;
+    use TickMovement;
+
+    constructor {
+        @x = Display.width() + 1;
+        this.randomise_y(3);
+
+        @x_velocity = -0.6;
+    }
+
+    draw {
+        return sprite {
+            .##
+            #..
+            .##
+        };
+    }
+}

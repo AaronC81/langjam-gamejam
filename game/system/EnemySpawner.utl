@@ -10,7 +10,7 @@ entity EnemySpawner {
 
     tick {
         if (@spawn_timer.elapsed()) {
-            enemy_number = Math.random_int(1, 3);
+            enemy_number = Math.random_int(1, 4);
             if (enemy_number == 1) {
                 spawn WobblerEnemy;
             }
@@ -19,6 +19,9 @@ entity EnemySpawner {
             }
             if (enemy_number == 3) {
                 spawn SprayerEnemy;
+            }
+            if (enemy_number == 4) {
+                spawn ZoomerEnemy;
             }
 
             @spawn_timer.start(Math.random_int(25, 60));
@@ -29,6 +32,7 @@ entity EnemySpawner {
         each x in (CannonEnemy.all()) { destroy x; }
         each x in (WobblerEnemy.all()) { destroy x; }
         each x in (SprayerEnemy.all()) { destroy x; }
+        each x in (ZoomerEnemy.all()) { destroy x; }
         each x in (EnemyBullet.all()) { destroy x; }
     }
 }
