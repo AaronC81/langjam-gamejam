@@ -252,9 +252,27 @@ fn cmp_expression(input: &str) -> IResult<&str, Expression> {
     Ok((input, expr))
 }
 
-pub fn expression(input: &str) -> IResult<&str, Expression> {
-    // TODO: binop
-    // TODO: call
+fn bool_op_expression(input: &str) -> IResult<&str, Expression> {
+    let (input, mut expr) = cmp_expression(input)?;
 
-    cmp_expression(input)
+    let (input, ops) = many0((
+        ws0,
+        alt((tag("&&"), tag("||"))),
+        ws0,
+        cmp_expression,
+    )).parse(input)?;
+    for (_, op, _, right) in ops {
+        let operator = match op {
+            "&&" => BinaryOperator::And,
+            "||" => BinaryOperator::Or,
+            _ => unreachable!(),
+        };
+        expr = Expression::BinaryOperation { left: Box::new(expr), right: Box::new(right), operator };
+    }
+
+    Ok((input, expr))
+}
+
+pub fn expression(input: &str) -> IResult<&str, Expression> {
+    bool_op_expression(input)
 }

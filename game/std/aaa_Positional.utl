@@ -13,13 +13,10 @@ entity Positional {
     }
 
     func has_hit(x, y, w, h) {
-        /* No boolean operators yet, so this will do! */
-        if (@x < x) { return false; }
-        if (@y < y) { return false; }
-        if (@x > x + w - 1) { return false; }
-        if (@y > y + h - 1) { return false; }
-
-        return true;
+        return @x >= x
+            && @y >= y
+            && @x <= x + w - 1
+            && @y <= y + h - 1;
     }
 
     func x() {

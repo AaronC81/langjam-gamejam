@@ -93,6 +93,9 @@ pub enum BinaryOperator {
     GreaterThan,
     LessThanOrEquals,
     GreaterThanOrEquals,
+
+    And,
+    Or,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -428,6 +428,36 @@ impl Interpreter {
             }
 
             Expression::BinaryOperation { left, right, operator } => {
+                fn to_boolean(obj: Object) -> InterpreterResult<bool> {
+                    if let Object::Boolean(b) = obj {
+                        Ok(b)
+                    } else {
+                        Err(RuntimeError::new(format!("both sides of logical operator must be booleans")))
+                    }
+                }
+
+                // Boolean operators are special in that they short-circuit, so handle them early
+                if let BinaryOperator::And = operator {
+                    let left = to_boolean(self.interpret_expression(&left, frame)?.read()?)?;
+                    if left {
+                        let right = to_boolean(self.interpret_expression(&right, frame)?.read()?)?;
+                        return Ok(Value::ReadOnly(Object::Boolean(right)));
+                    } else {
+                        // If LHS is false, the expression can never be true
+                        return Ok(Value::ReadOnly(Object::Boolean(false)));
+                    }
+                }
+                if let BinaryOperator::Or = operator {
+                    let left = to_boolean(self.interpret_expression(&left, frame)?.read()?)?;
+                    if left {
+                        // If LHS is true, the expression will always be true
+                        return Ok(Value::ReadOnly(Object::Boolean(true)));
+                    } else {
+                        let right = to_boolean(self.interpret_expression(&right, frame)?.read()?)?;
+                        return Ok(Value::ReadOnly(Object::Boolean(right)));
+                    }
+                }
+
                 let left = self.interpret_expression(&left, frame)?.read()?;
                 let right = self.interpret_expression(&right, frame)?.read()?;
 
@@ -451,6 +481,9 @@ impl Interpreter {
                         BinaryOperator::GreaterThan => numeric(left, right, |l, r| Object::Boolean(l > r))?,
                         BinaryOperator::LessThanOrEquals => numeric(left, right, |l, r| Object::Boolean(l <= r))?,
                         BinaryOperator::GreaterThanOrEquals => numeric(left, right, |l, r| Object::Boolean(l >= r))?,
+
+                        // Handled earlier
+                        BinaryOperator::And | BinaryOperator::Or => unreachable!(),
                     }
                 ))
             }
