@@ -1,5 +1,6 @@
 entity WobblerEnemy {
     use Positional;
+    use TickHit;
 
     var @x_velocity, @y_velocity;
 
@@ -13,7 +14,6 @@ entity WobblerEnemy {
 
     tick {
         this.tick_movement();
-        this.tick_hit();
     }
 
     func tick_movement() {
@@ -30,17 +30,6 @@ entity WobblerEnemy {
 
         if (@x < -3) {
             destroy this;
-        }
-    }
-
-    func tick_hit() {
-        each bullet in (ShipBullet.all()) {
-            if (bullet.has_hit(@x, @y, 3, 3)) {
-                destroy this;
-                destroy bullet;
-
-                (sound { 0.1: A }).play();
-            }
         }
     }
 

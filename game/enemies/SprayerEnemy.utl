@@ -1,4 +1,4 @@
-entity CannonEnemy {
+entity SprayerEnemy {
     use Positional;
     use TickHit;
     use TickMovement;
@@ -9,7 +9,7 @@ entity CannonEnemy {
         @x = Display.width() + 1;
         this.randomise_y(3);
 
-        @x_velocity = -0.05;
+        @x_velocity = -0.08;
 
         @fire_timer = spawn Timer;
         @fire_timer.start(120); /* instead of configure, so it doesn't fire immediately on spawn */
@@ -23,6 +23,7 @@ entity CannonEnemy {
         if (@fire_timer.elapsed()) {
             bullet = spawn EnemyBullet;
             bullet.move_to(@x, @y + 1);
+            bullet.set_y_velocity((Math.random_int(1, 11) - 5) / 15);
 
             @fire_timer.restart();
         }
@@ -30,9 +31,9 @@ entity CannonEnemy {
 
     draw {
         return sprite {
-            .##
             ###
-            .##
+            #..
+            ###
         };
     }
 }

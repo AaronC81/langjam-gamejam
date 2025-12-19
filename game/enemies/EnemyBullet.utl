@@ -1,8 +1,18 @@
 entity EnemyBullet {
     use Positional;
 
+    var @y_velocity;
+    constructor {
+        @y_velocity = 0;
+    }
+    
+    func set_y_velocity(v) {
+        @y_velocity = v;
+    }
+
     tick {
         @x = @x - 0.3;
+        @y = @y + @y_velocity;
 
         if (@x < 0) {
             destroy this;

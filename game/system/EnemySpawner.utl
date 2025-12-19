@@ -10,12 +10,15 @@ entity EnemySpawner {
 
     tick {
         if (@spawn_timer.elapsed()) {
-            enemy_number = Math.random_int(1, 2);
+            enemy_number = Math.random_int(1, 3);
             if (enemy_number == 1) {
                 spawn WobblerEnemy;
             }
             if (enemy_number == 2) {
                 spawn CannonEnemy;
+            }
+            if (enemy_number == 3) {
+                spawn SprayerEnemy;
             }
 
             @spawn_timer.start(Math.random_int(25, 60));
@@ -25,6 +28,7 @@ entity EnemySpawner {
     func destroy_enemies() {
         each x in (CannonEnemy.all()) { destroy x; }
         each x in (WobblerEnemy.all()) { destroy x; }
+        each x in (SprayerEnemy.all()) { destroy x; }
         each x in (EnemyBullet.all()) { destroy x; }
     }
 }

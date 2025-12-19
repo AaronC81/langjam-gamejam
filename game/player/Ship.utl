@@ -52,14 +52,18 @@ entity Ship {
     }
 
     func tick_hit() {
-        /* TODO: Track health, better audio/sound */
-        each bullet in (EnemyBullet.all()) {
-            if (bullet.has_hit(@x, @y, 4, 5)) {
-                destroy bullet;
-                destroy this;
+        each bullet in (EnemyBullet.all()) { this.die_if_collision(bullet); }
+        each enemy in (WobblerEnemy.all()) { this.die_if_collision(enemy); }
+        each enemy in (CannonEnemy.all()) { this.die_if_collision(enemy); }
+        each enemy in (SprayerEnemy.all()) { this.die_if_collision(enemy); }
+    }
 
-                (spawn Explosion).move_to(bullet.x() - 2, bullet.y() - 2);
-            }
+    func die_if_collision(obj) {
+        if (obj.has_hit(@x, @y, 4, 5)) {
+            destroy obj;
+            destroy this;
+
+            (spawn Explosion).move_to(obj.x() - 2, obj.y() - 2);
         }
     }
 

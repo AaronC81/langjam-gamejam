@@ -1,0 +1,24 @@
+entity TickHit {
+    tick {
+        each bullet in (ShipBullet.all()) {
+            if (bullet.has_hit(@x, @y, 3, 3)) {
+                destroy this;
+                destroy bullet;
+
+                (sound { 0.1: A }).play();
+            }
+        }
+    }
+}
+
+entity TickMovement {
+    var @x_velocity;
+
+    tick {
+        @x = @x + @x_velocity;
+
+        if (@x < -3) {
+            destroy this;
+        }
+    }
+}
